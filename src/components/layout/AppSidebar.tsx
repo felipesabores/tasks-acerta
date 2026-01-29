@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList } from 'lucide-react';
+import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais branco.png";
@@ -64,32 +64,60 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
+              {/* Home - visible to all users */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Início">
+                  <NavLink
+                    to="/"
+                    end
+                    className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                  >
+                    <Home className="h-4 w-4" />
+                    {!isCollapsed && <span>Início</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
               {/* My Tasks - visible to all users */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Todas as tarefas diárias">
+                <SidebarMenuButton asChild tooltip="Minhas Tarefas">
                   <NavLink
                     to="/my-tasks"
                     className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
                     activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                   >
                     <ClipboardList className="h-4 w-4" />
-                    {!isCollapsed && <span>Todas as tarefas diárias</span>}
+                    {!isCollapsed && <span>Minhas Tarefas</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* Dashboard - visible to admins and task editors */}
+              {/* Leaderboard - visible to all users */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Ranking">
+                  <NavLink
+                    to="/leaderboard"
+                    className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    {!isCollapsed && <span>Ranking</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* All Tasks - visible to admins and task editors */}
               {canCreateTasks && (
                 <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Dashboard">
+                  <SidebarMenuButton asChild tooltip="Gerenciar Tarefas">
                     <NavLink
-                      to="/"
-                      end
+                      to="/tasks"
                       className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                     >
-                      <LayoutDashboard className="h-4 w-4" />
-                      {!isCollapsed && <span>Dashboard</span>}
+                      <ListTodo className="h-4 w-4" />
+                      {!isCollapsed && <span>Gerenciar Tarefas</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
