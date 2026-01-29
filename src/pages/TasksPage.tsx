@@ -6,7 +6,7 @@ import { useTasks, Task, TaskFormData } from '@/hooks/useTasks';
 import { useToast } from '@/hooks/use-toast';
 
 export default function TasksPage() {
-  const { tasks, users, loading, addTask, updateTask, deleteTask, updateTaskStatus } = useTasks();
+  const { tasks, users, loading, addTask, updateTask, deleteTask, updateTaskStatus, refetch } = useTasks();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -56,6 +56,7 @@ export default function TasksPage() {
         onDelete={handleDelete}
         onStatusChange={updateTaskStatus}
         onNewTask={handleNewTask}
+        onTaskUpdated={refetch}
       />
       <TaskFormDialog
         open={dialogOpen}

@@ -1,8 +1,10 @@
-import { LayoutDashboard, ListTodo, LogOut } from 'lucide-react';
+import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Badge } from '@/components/ui/badge';
 import {
   Sidebar,
   SidebarContent,
@@ -17,14 +19,10 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 
-const menuItems = [
-  { title: 'Dashboard', url: '/', icon: LayoutDashboard },
-  { title: 'Tarefas', url: '/tasks', icon: ListTodo },
-];
-
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut } = useAuth();
+  const { role, isAdmin, canCreateTasks } = useUserRole();
   const isCollapsed = state === 'collapsed';
 
   const userEmail = user?.email || '';
@@ -35,6 +33,17 @@ export function AppSidebar() {
     .join('')
     .toUpperCase()
     .slice(0, 2);
+
+  const getRoleLabel = () => {
+    switch (role) {
+      case 'admin':
+        return 'Admin';
+      case 'task_editor':
+        return 'Editor';
+      default:
+        return 'Usuário';
+    }
+  };
 
   return (
     <Sidebar collapsible="icon">
@@ -55,21 +64,68 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map(item => (
-                <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton asChild tooltip={item.title}>
+              {/* My Tasks - visible to all users */}
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild tooltip="Minhas Tarefas">
+                  <NavLink
+                    to="/my-tasks"
+                    className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                  >
+                    <ClipboardList className="h-4 w-4" />
+                    {!isCollapsed && <span>Minhas Tarefas</span>}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+
+              {/* Dashboard - visible to admins and task editors */}
+              {canCreateTasks && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Dashboard">
                     <NavLink
-                      to={item.url}
+                      to="/"
                       end
                       className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
                       activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                     >
-                      <item.icon className="h-4 w-4" />
-                      {!isCollapsed && <span>{item.title}</span>}
+                      <LayoutDashboard className="h-4 w-4" />
+                      {!isCollapsed && <span>Dashboard</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+              )}
+
+              {/* All Tasks - visible to admins and task editors */}
+              {canCreateTasks && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Todas as Tarefas">
+                    <NavLink
+                      to="/tasks"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <ListTodo className="h-4 w-4" />
+                      {!isCollapsed && <span>Todas as Tarefas</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {/* Users Management - visible to admins only */}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Usuários">
+                    <NavLink
+                      to="/users"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <Users className="h-4 w-4" />
+                      {!isCollapsed && <span>Usuários</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -83,9 +139,14 @@ export function AppSidebar() {
           </Avatar>
           {!isCollapsed && (
             <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-sidebar-foreground truncate">
-                {userName}
-              </p>
+              <div className="flex items-center gap-2">
+                <p className="text-sm font-medium text-sidebar-foreground truncate">
+                  {userName}
+                </p>
+                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                  {getRoleLabel()}
+                </Badge>
+              </div>
               <p className="text-xs text-sidebar-foreground/60 truncate">{userEmail}</p>
             </div>
           )}

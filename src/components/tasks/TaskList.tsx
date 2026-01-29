@@ -1,5 +1,7 @@
+import { useState, useMemo } from 'react';
 import { Task } from '@/hooks/useTasks';
 import { TaskCard } from './TaskCard';
+import { TaskDetailModal } from './TaskDetailModal';
 import { Button } from '@/components/ui/button';
 import { Plus, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
@@ -10,7 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { useState, useMemo } from 'react';
+import { useUserRole } from '@/hooks/useUserRole';
 
 interface TaskListProps {
   tasks: Task[];
@@ -20,6 +22,7 @@ interface TaskListProps {
   onDelete: (id: string) => void;
   onStatusChange: (id: string, status: 'pending' | 'in_progress' | 'done') => void;
   onNewTask: () => void;
+  onTaskUpdated: () => void;
 }
 
 export function TaskList({
@@ -30,10 +33,14 @@ export function TaskList({
   onDelete,
   onStatusChange,
   onNewTask,
+  onTaskUpdated,
 }: TaskListProps) {
+  const { canCreateTasks } = useUserRole();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [userFilter, setUserFilter] = useState<string>('all');
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  const [detailModalOpen, setDetailModalOpen] = useState(false);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -46,6 +53,11 @@ export function TaskList({
       return matchesSearch && matchesStatus && matchesUser;
     });
   }, [tasks, search, statusFilter, userFilter]);
+
+  const handleCardClick = (task: Task) => {
+    setSelectedTask(task);
+    setDetailModalOpen(true);
+  };
 
   if (loading) {
     return (
@@ -92,17 +104,19 @@ export function TaskList({
               ))}
             </SelectContent>
           </Select>
-          <Button onClick={onNewTask}>
-            <Plus className="h-4 w-4 mr-2" />
-            Nova Tarefa
-          </Button>
+          {canCreateTasks && (
+            <Button onClick={onNewTask}>
+              <Plus className="h-4 w-4 mr-2" />
+              Nova Tarefa
+            </Button>
+          )}
         </div>
       </div>
 
       {filteredTasks.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p>Nenhuma tarefa encontrada.</p>
-          {tasks.length === 0 && (
+          {tasks.length === 0 && canCreateTasks && (
             <Button variant="link" onClick={onNewTask} className="mt-2">
               Criar sua primeira tarefa
             </Button>
@@ -117,10 +131,18 @@ export function TaskList({
               onEdit={onEdit}
               onDelete={onDelete}
               onStatusChange={onStatusChange}
+              onClick={handleCardClick}
             />
           ))}
         </div>
       )}
+
+      <TaskDetailModal
+        task={selectedTask}
+        open={detailModalOpen}
+        onOpenChange={setDetailModalOpen}
+        onTaskUpdated={onTaskUpdated}
+      />
     </div>
   );
 }
