@@ -55,11 +55,6 @@ export function AppSidebar() {
             alt="AcertaMais Logo" 
             className="h-8 w-auto"
           />
-          {!isCollapsed && (
-            <span className="font-semibold text-lg text-sidebar-foreground">
-              AcertaMais
-            </span>
-          )}
         </div>
       </SidebarHeader>
       <SidebarContent>
