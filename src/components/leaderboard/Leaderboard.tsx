@@ -56,20 +56,20 @@ export function Leaderboard() {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Trophy className="h-5 w-5 text-primary" />
-          Ranking de Pontuação
+    <Card className="w-full max-w-full">
+      <CardHeader className="px-3 pt-3 pb-2 sm:px-6 sm:pt-6">
+        <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+          <Trophy className="h-5 w-5 text-primary shrink-0" />
+          <span className="truncate">Ranking</span>
         </CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="px-3 pb-3 sm:px-6 sm:pb-6">
         {leaderboard.length === 0 ? (
-          <p className="text-center text-muted-foreground py-4">
+          <p className="text-center text-muted-foreground py-4 text-sm">
             Nenhum ponto registrado ainda.
           </p>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
+          <ScrollArea className="h-[300px] sm:h-[400px] pr-2 sm:pr-4">
             <div className="space-y-3">
               {leaderboard.map((entry) => {
                 const isCurrentUser = currentUserRank?.profile_id === entry.profile_id;
@@ -84,7 +84,7 @@ export function Leaderboard() {
                   <div
                     key={entry.id}
                     className={cn(
-                      "flex items-center gap-4 p-3 rounded-lg transition-colors",
+                      "flex items-center gap-2 sm:gap-4 p-2 sm:p-3 rounded-lg transition-colors",
                       isCurrentUser ? "bg-primary/10 border border-primary/20" : "bg-muted/50",
                       entry.rank <= 3 && "border-l-4",
                       entry.rank === 1 && "border-l-yellow-400",
@@ -94,9 +94,9 @@ export function Leaderboard() {
                   >
                     {getRankDisplay(entry.rank)}
                     
-                    <Avatar className="h-10 w-10">
+                    <Avatar className="h-8 w-8 sm:h-10 sm:w-10 shrink-0">
                       <AvatarFallback className={cn(
-                        "font-medium",
+                        "font-medium text-xs sm:text-sm",
                         entry.rank === 1 && "bg-yellow-100 text-yellow-800",
                         entry.rank === 2 && "bg-gray-100 text-gray-800",
                         entry.rank === 3 && "bg-amber-100 text-amber-800"
@@ -106,9 +106,9 @@ export function Leaderboard() {
                     </Avatar>
                     
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 flex-wrap">
                         <p className={cn(
-                          "font-medium truncate",
+                          "font-medium truncate text-sm",
                           isCurrentUser && "text-primary"
                         )}>
                           {entry.profile.name}
@@ -117,14 +117,14 @@ export function Leaderboard() {
                           <span className="text-xs text-primary font-medium">(você)</span>
                         )}
                       </div>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.tasks_completed} concluídas • {entry.tasks_not_completed} não concluídas
+                      <p className="text-xs text-muted-foreground truncate">
+                        {entry.tasks_completed}✓ • {entry.tasks_not_completed}✗
                       </p>
                     </div>
                     
-                    <div className="text-right">
+                    <div className="text-right shrink-0">
                       <p className={cn(
-                        "font-bold text-lg",
+                        "font-bold text-base sm:text-lg",
                         entry.rank === 1 && "text-yellow-600",
                         entry.rank === 2 && "text-gray-600",
                         entry.rank === 3 && "text-amber-700",
@@ -132,7 +132,7 @@ export function Leaderboard() {
                       )}>
                         {entry.total_points}
                       </p>
-                      <p className="text-xs text-muted-foreground">pontos</p>
+                      <p className="text-xs text-muted-foreground">pts</p>
                     </div>
                   </div>
                 );
