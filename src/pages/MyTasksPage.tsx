@@ -1,58 +1,66 @@
 import { useState, useMemo } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
-import { TaskDetailModal } from '@/components/tasks/TaskDetailModal';
-import { TaskStatusBadge } from '@/components/tasks/TaskStatusBadge';
-import { CriticalityBadge } from '@/components/tasks/CriticalityBadge';
+import { DailyTaskCard } from '@/components/tasks/DailyTaskCard';
+import { Leaderboard } from '@/components/leaderboard/Leaderboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { useTasks, Task } from '@/hooks/useTasks';
-import { useAuth } from '@/contexts/AuthContext';
+import { useDailyTasks, CompletionStatus } from '@/hooks/useDailyTasks';
 import { 
   Loader2, 
   Star, 
   CheckCircle2, 
-  Clock, 
-  AlertTriangle,
-  Target
+  XCircle,
+  Target,
+  Calendar
 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 export default function MyTasksPage() {
-  const { user } = useAuth();
-  const { tasks, profiles, loading, refetch } = useTasks();
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  const [detailModalOpen, setDetailModalOpen] = useState(false);
+  const { tasks, completions, loading, submitDayCompletion, getTaskCompletion, stats, refetch } = useDailyTasks();
+  const [selectedStatuses, setSelectedStatuses] = useState<Record<string, CompletionStatus>>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  // Get current user's profile
-  const currentProfile = profiles.find(p => p.user_id === user?.id);
-
-  // Filter tasks assigned to current user
-  const myTasks = useMemo(() => {
-    if (!currentProfile) return [];
-    return tasks.filter(task => task.assigned_to === currentProfile.id);
-  }, [tasks, currentProfile]);
-
-  const stats = useMemo(() => {
-    const total = myTasks.length;
-    const completed = myTasks.filter(t => t.status === 'done').length;
-    const pending = myTasks.filter(t => t.status === 'pending').length;
-    const inProgress = myTasks.filter(t => t.status === 'in_progress').length;
-    const totalPoints = myTasks
-      .filter(t => t.status === 'done')
-      .reduce((sum, t) => sum + (t.points || 0), 0);
-    const completionRate = total > 0 ? Math.round((completed / total) * 100) : 0;
-
-    return { total, completed, pending, inProgress, totalPoints, completionRate };
-  }, [myTasks]);
-
-  const handleCardClick = (task: Task) => {
-    setSelectedTask(task);
-    setDetailModalOpen(true);
+  const handleStatusChange = (taskId: string, status: CompletionStatus) => {
+    setSelectedStatuses(prev => ({
+      ...prev,
+      [taskId]: status,
+    }));
   };
+
+  const handleSubmitDay = async () => {
+    const taskCompletions = Object.entries(selectedStatuses).map(([taskId, status]) => ({
+      taskId,
+      status,
+    }));
+
+    if (taskCompletions.length === 0) {
+      return;
+    }
+
+    setSubmitting(true);
+    const success = await submitDayCompletion(taskCompletions);
+    if (success) {
+      setSelectedStatuses({});
+    }
+    setSubmitting(false);
+  };
+
+  const pendingTasks = useMemo(() => {
+    return tasks.filter(task => !getTaskCompletion(task.id));
+  }, [tasks, getTaskCompletion]);
+
+  const completedTasks = useMemo(() => {
+    return tasks.filter(task => !!getTaskCompletion(task.id));
+  }, [tasks, getTaskCompletion]);
+
+  const allPendingHaveStatus = pendingTasks.every(task => selectedStatuses[task.id]);
+  const today = format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
 
   if (loading) {
     return (
-      <AppLayout title="Minhas Tarefas">
+      <AppLayout title="Tarefas Diárias">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -61,8 +69,16 @@ export default function MyTasksPage() {
   }
 
   return (
-    <AppLayout title="Minhas Tarefas">
+    <AppLayout title="Tarefas Diárias">
       <div className="space-y-6">
+        {/* Header with date */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-5 w-5" />
+            <span className="capitalize">{today}</span>
+          </div>
+        </div>
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
@@ -80,97 +96,100 @@ export default function MyTasksPage() {
               <CheckCircle2 className="h-4 w-4 text-primary" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.completed}</div>
-              <Progress value={stats.completionRate} className="mt-2" />
+              <div className="text-2xl font-bold text-primary">{stats.completed}</div>
+              {stats.total > 0 && (
+                <Progress value={(stats.completed / stats.total) * 100} className="mt-2" />
+              )}
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Em Andamento</CardTitle>
-              <Clock className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium">Não Concluídas</CardTitle>
+              <XCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.inProgress + stats.pending}</div>
+              <div className="text-2xl font-bold text-destructive">{stats.notCompleted}</div>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pontos Ganhos</CardTitle>
-              <Star className="h-4 w-4 text-primary" />
+              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.totalPoints}</div>
+              <div className="text-2xl font-bold">{stats.pending}</div>
             </CardContent>
           </Card>
         </div>
 
-        {/* Task Cards */}
-        {myTasks.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <p>Você não tem tarefas atribuídas.</p>
-          </div>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {myTasks.map(task => {
-              const isCompleted = task.status === 'done';
-              
-              return (
-                <Card
-                  key={task.id}
-                  className={cn(
-                    "cursor-pointer transition-all duration-200",
-                    isCompleted 
-                      ? "opacity-60 bg-muted/50" 
-                      : "hover:shadow-md hover:border-primary/20"
-                  )}
-                  onClick={() => handleCardClick(task)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h3 className={cn(
-                            "font-semibold truncate",
-                            isCompleted ? "text-muted-foreground line-through" : "text-foreground"
-                          )}>
-                            {task.title}
-                          </h3>
-                          {task.is_mandatory && (
-                            <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-                          )}
-                        </div>
-                        {task.description && (
-                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">
-                            {task.description}
-                          </p>
-                        )}
-                      </div>
-                      {task.points > 0 && (
-                        <div className="flex items-center gap-1 text-primary">
-                          <Star className="h-4 w-4 fill-current" />
-                          <span className="font-semibold">{task.points}</span>
-                        </div>
-                      )}
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between gap-2">
-                      <CriticalityBadge criticality={task.criticality} />
-                      <TaskStatusBadge status={task.status} />
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
-        )}
+        <div className="grid gap-6 lg:grid-cols-3">
+          {/* Tasks Column */}
+          <div className="lg:col-span-2 space-y-6">
+            {/* Pending Tasks */}
+            {pendingTasks.length > 0 && (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Tarefas Pendentes</h2>
+                  <Button
+                    onClick={handleSubmitDay}
+                    disabled={!allPendingHaveStatus || submitting}
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    {submitting ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <CheckCircle2 className="h-4 w-4 mr-2" />
+                    )}
+                    Concluir o Dia
+                  </Button>
+                </div>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {pendingTasks.map(task => (
+                    <DailyTaskCard
+                      key={task.id}
+                      task={task}
+                      selectedStatus={selectedStatuses[task.id] || null}
+                      onStatusChange={handleStatusChange}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
 
-        <TaskDetailModal
-          task={selectedTask}
-          open={detailModalOpen}
-          onOpenChange={setDetailModalOpen}
-          onTaskUpdated={refetch}
-        />
+            {/* Completed Tasks */}
+            {completedTasks.length > 0 && (
+              <div className="space-y-4">
+                <h2 className="text-lg font-semibold text-muted-foreground">
+                  Tarefas Concluídas Hoje
+                </h2>
+                <div className="grid gap-4 md:grid-cols-2">
+                  {completedTasks.map(task => (
+                    <DailyTaskCard
+                      key={task.id}
+                      task={task}
+                      completion={getTaskCompletion(task.id)}
+                      selectedStatus={null}
+                      onStatusChange={() => {}}
+                      disabled
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Empty State */}
+            {tasks.length === 0 && (
+              <div className="text-center py-12 text-muted-foreground">
+                <p>Você não tem tarefas atribuídas.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Leaderboard Column */}
+          <div className="lg:col-span-1">
+            <Leaderboard />
+          </div>
+        </div>
       </div>
     </AppLayout>
   );
