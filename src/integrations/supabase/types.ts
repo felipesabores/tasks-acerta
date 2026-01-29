@@ -59,6 +59,30 @@ export type Database = {
           },
         ]
       }
+      criticality_points: {
+        Row: {
+          created_at: string
+          criticality: string
+          default_points: number
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          criticality: string
+          default_points?: number
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          criticality?: string
+          default_points?: number
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       daily_task_completions: {
         Row: {
           completion_date: string
@@ -113,27 +137,33 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          cargo: string | null
           created_at: string
           id: string
           name: string
           updated_at: string
           user_id: string
+          whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
+          cargo?: string | null
           created_at?: string
           id?: string
           name: string
           updated_at?: string
           user_id: string
+          whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
+          cargo?: string | null
           created_at?: string
           id?: string
           name?: string
           updated_at?: string
           user_id?: string
+          whatsapp?: string | null
         }
         Relationships: []
       }
