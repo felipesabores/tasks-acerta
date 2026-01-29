@@ -48,7 +48,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: Ta
   return (
     <Card 
       className={cn(
-        "group transition-all duration-200 cursor-pointer",
+        "group transition-all duration-200 cursor-pointer w-full max-w-full",
         isCompleted 
           ? "opacity-60 bg-muted/50" 
           : "hover:shadow-md hover:border-primary/20"
@@ -124,16 +124,17 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: Ta
         </div>
       </CardHeader>
       <CardContent>
-        <div className="flex items-center justify-between gap-2 flex-wrap">
-          <div className="flex items-center gap-2">
-            <Avatar className="h-7 w-7">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-2 min-w-0">
+            <Avatar className="h-7 w-7 shrink-0">
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-muted-foreground">{assigneeName}</span>
+            <span className="text-sm text-muted-foreground truncate">{assigneeName}</span>
           </div>
-          <div className="flex items-center gap-2">
+
+          <div className="flex flex-wrap items-center gap-2 justify-start sm:justify-end max-w-full">
             {task.points > 0 && (
               <div className="flex items-center gap-1 text-primary">
                 <Star className="h-3 w-3 fill-current" />
@@ -143,8 +144,8 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: Ta
             <CriticalityBadge criticality={task.criticality} />
             {task.due_date && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {format(new Date(task.due_date), "dd MMM", { locale: ptBR })}
+                <Calendar className="h-3 w-3 shrink-0" />
+                <span className="whitespace-nowrap">{format(new Date(task.due_date), "dd MMM", { locale: ptBR })}</span>
               </div>
             )}
             <TaskStatusBadge status={task.status} />
