@@ -126,10 +126,10 @@ export default function MyTasksPage() {
           {/* Tasks Column */}
           <div className="lg:col-span-2 space-y-6">
             {/* Pending Tasks */}
-            {pendingTasks.length > 0 && (
+            {pendingTasks.length > 0 ? (
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Tarefas Pendentes</h2>
+                  <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
                   <Button
                     onClick={handleSubmitDay}
                     disabled={!allPendingHaveStatus || submitting}
@@ -154,31 +154,17 @@ export default function MyTasksPage() {
                   ))}
                 </div>
               </div>
-            )}
-
-            {/* Completed Tasks */}
-            {completedTasks.length > 0 && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-semibold text-muted-foreground">
-                  Tarefas Concluídas Hoje
-                </h2>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {completedTasks.map(task => (
-                    <DailyTaskCard
-                      key={task.id}
-                      task={task}
-                      completion={getTaskCompletion(task.id)}
-                      selectedStatus={null}
-                      onStatusChange={() => {}}
-                      disabled
-                    />
-                  ))}
-                </div>
+            ) : tasks.length > 0 ? (
+              /* All tasks completed for the day */
+              <div className="text-center py-12">
+                <CheckCircle2 className="h-12 w-12 text-primary mx-auto mb-4" />
+                <h2 className="text-lg font-semibold text-primary mb-2">Dia Concluído!</h2>
+                <p className="text-muted-foreground">
+                  Todas as suas {completedTasks.length} tarefas do dia foram registradas.
+                </p>
               </div>
-            )}
-
-            {/* Empty State */}
-            {tasks.length === 0 && (
+            ) : (
+              /* No tasks assigned */
               <div className="text-center py-12 text-muted-foreground">
                 <p>Você não tem tarefas atribuídas.</p>
               </div>

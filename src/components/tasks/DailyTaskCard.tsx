@@ -95,12 +95,12 @@ export function DailyTaskCard({
                 </div>
               )}
               
-              {/* Info tooltip */}
+              {/* Quick view tooltip (eye icon) */}
               {task.description && (
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button variant="ghost" size="icon" className="h-8 w-8">
-                      <Info className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4 text-muted-foreground" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent side="top" className="max-w-[300px]">
@@ -109,14 +109,14 @@ export function DailyTaskCard({
                 </Tooltip>
               )}
               
-              {/* Review button */}
+              {/* Info button - opens modal */}
               <Button 
                 variant="ghost" 
                 size="icon" 
                 className="h-8 w-8"
                 onClick={() => setReviewOpen(true)}
               >
-                <Eye className="h-4 w-4 text-muted-foreground" />
+                <Info className="h-4 w-4 text-muted-foreground" />
               </Button>
             </div>
           </div>
@@ -191,8 +191,8 @@ export function DailyTaskCard({
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Eye className="h-5 w-5" />
-              Revisar Tarefa
+              <Info className="h-5 w-5" />
+              Detalhes da Tarefa
             </DialogTitle>
           </DialogHeader>
           
