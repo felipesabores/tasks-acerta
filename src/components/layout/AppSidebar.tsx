@@ -1,4 +1,5 @@
 import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList } from 'lucide-react';
+import logo from '@/assets/logo.png';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -50,7 +51,7 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
           <img 
-            src="https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//logo-black-white@2x.png" 
+            src={logo} 
             alt="AcertaMais Logo" 
             className="h-8 w-auto"
           />
