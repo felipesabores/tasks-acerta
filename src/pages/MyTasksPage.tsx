@@ -5,6 +5,11 @@ import { Leaderboard } from '@/components/leaderboard/Leaderboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { useDailyTasks, CompletionStatus } from '@/hooks/useDailyTasks';
 import { 
   Loader2, 
@@ -12,7 +17,9 @@ import {
   CheckCircle2, 
   XCircle,
   Target,
-  Calendar
+  Calendar,
+  ChevronDown,
+  ClipboardList
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -122,59 +129,86 @@ export default function MyTasksPage() {
           </Card>
         </div>
 
-        <div className="grid gap-6 lg:grid-cols-3">
-          {/* Tasks Column */}
-          <div className="lg:col-span-2 space-y-6">
-            {/* Pending Tasks */}
-            {pendingTasks.length > 0 ? (
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
-                  <Button
-                    onClick={handleSubmitDay}
-                    disabled={!allPendingHaveStatus || submitting}
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    {submitting ? (
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                    ) : (
-                      <CheckCircle2 className="h-4 w-4 mr-2" />
-                    )}
-                    Concluir o Dia
-                  </Button>
+        {/* Tasks Section */}
+        <div className="space-y-6">
+          {/* Pending Tasks */}
+          {pendingTasks.length > 0 ? (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
+                <Button
+                  onClick={handleSubmitDay}
+                  disabled={!allPendingHaveStatus || submitting}
+                  className="bg-primary hover:bg-primary/90"
+                >
+                  {submitting ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
+                  Concluir o Dia
+                </Button>
+              </div>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                {pendingTasks.map(task => (
+                  <DailyTaskCard
+                    key={task.id}
+                    task={task}
+                    selectedStatus={selectedStatuses[task.id] || null}
+                    onStatusChange={handleStatusChange}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : tasks.length > 0 ? (
+            /* All tasks completed for the day */
+            <Card className="border-primary/20 bg-primary/5">
+              <CardContent className="pt-6">
+                <div className="text-center py-6">
+                  <CheckCircle2 className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <h2 className="text-xl font-semibold text-primary mb-2">Dia Concluído!</h2>
+                  <p className="text-muted-foreground mb-6">
+                    Todas as suas {completedTasks.length} tarefas do dia foram registradas.
+                  </p>
+                  
+                  {/* Review completed tasks */}
+                  <Collapsible className="w-full max-w-2xl mx-auto">
+                    <CollapsibleTrigger asChild>
+                      <Button variant="outline" className="gap-2">
+                        <ClipboardList className="h-4 w-4" />
+                        Revisar Tarefas do Dia
+                        <ChevronDown className="h-4 w-4 transition-transform duration-200 group-data-[state=open]:rotate-180" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="mt-6">
+                      <div className="grid gap-4 md:grid-cols-2 text-left">
+                        {completedTasks.map(task => (
+                          <DailyTaskCard
+                            key={task.id}
+                            task={task}
+                            completion={getTaskCompletion(task.id)}
+                            selectedStatus={null}
+                            onStatusChange={() => {}}
+                            disabled
+                          />
+                        ))}
+                      </div>
+                    </CollapsibleContent>
+                  </Collapsible>
                 </div>
-                <div className="grid gap-4 md:grid-cols-2">
-                  {pendingTasks.map(task => (
-                    <DailyTaskCard
-                      key={task.id}
-                      task={task}
-                      selectedStatus={selectedStatuses[task.id] || null}
-                      onStatusChange={handleStatusChange}
-                    />
-                  ))}
-                </div>
-              </div>
-            ) : tasks.length > 0 ? (
-              /* All tasks completed for the day */
-              <div className="text-center py-12">
-                <CheckCircle2 className="h-12 w-12 text-primary mx-auto mb-4" />
-                <h2 className="text-lg font-semibold text-primary mb-2">Dia Concluído!</h2>
-                <p className="text-muted-foreground">
-                  Todas as suas {completedTasks.length} tarefas do dia foram registradas.
-                </p>
-              </div>
-            ) : (
-              /* No tasks assigned */
-              <div className="text-center py-12 text-muted-foreground">
-                <p>Você não tem tarefas atribuídas.</p>
-              </div>
-            )}
-          </div>
+              </CardContent>
+            </Card>
+          ) : (
+            /* No tasks assigned */
+            <div className="text-center py-12 text-muted-foreground">
+              <p>Você não tem tarefas atribuídas.</p>
+            </div>
+          )}
+        </div>
 
-          {/* Leaderboard Column */}
-          <div className="lg:col-span-1">
-            <Leaderboard />
-          </div>
+        {/* Leaderboard Section - Full Width */}
+        <div className="mt-8">
+          <Leaderboard />
         </div>
       </div>
     </AppLayout>

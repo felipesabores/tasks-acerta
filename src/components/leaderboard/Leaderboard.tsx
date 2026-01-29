@@ -1,7 +1,6 @@
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Trophy, Medal, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -69,76 +68,74 @@ export function Leaderboard() {
             Nenhum ponto registrado ainda.
           </p>
         ) : (
-          <ScrollArea className="h-[400px] pr-4">
-            <div className="space-y-3">
-              {leaderboard.map((entry) => {
-                const isCurrentUser = currentUserRank?.profile_id === entry.profile_id;
-                const initials = entry.profile.name
-                  .split(' ')
-                  .map(n => n[0])
-                  .join('')
-                  .toUpperCase()
-                  .slice(0, 2);
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {leaderboard.map((entry) => {
+              const isCurrentUser = currentUserRank?.profile_id === entry.profile_id;
+              const initials = entry.profile.name
+                .split(' ')
+                .map(n => n[0])
+                .join('')
+                .toUpperCase()
+                .slice(0, 2);
 
-                return (
-                  <div
-                    key={entry.id}
-                    className={cn(
-                      "flex items-center gap-4 p-3 rounded-lg transition-colors",
-                      isCurrentUser ? "bg-primary/10 border border-primary/20" : "bg-muted/50",
-                      entry.rank <= 3 && "border-l-4",
-                      entry.rank === 1 && "border-l-yellow-400",
-                      entry.rank === 2 && "border-l-gray-300",
-                      entry.rank === 3 && "border-l-amber-600"
-                    )}
-                  >
-                    {getRankDisplay(entry.rank)}
-                    
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className={cn(
-                        "font-medium",
-                        entry.rank === 1 && "bg-yellow-100 text-yellow-800",
-                        entry.rank === 2 && "bg-gray-100 text-gray-800",
-                        entry.rank === 3 && "bg-amber-100 text-amber-800"
-                      )}>
-                        {initials}
-                      </AvatarFallback>
-                    </Avatar>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className={cn(
-                          "font-medium truncate",
-                          isCurrentUser && "text-primary"
-                        )}>
-                          {entry.profile.name}
-                        </p>
-                        {isCurrentUser && (
-                          <span className="text-xs text-primary font-medium">(você)</span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {entry.tasks_completed} concluídas • {entry.tasks_not_completed} não concluídas
-                      </p>
-                    </div>
-                    
-                    <div className="text-right">
+              return (
+                <div
+                  key={entry.id}
+                  className={cn(
+                    "flex items-center gap-3 p-3 rounded-lg transition-colors",
+                    isCurrentUser ? "bg-primary/10 border border-primary/20" : "bg-muted/50",
+                    entry.rank <= 3 && "border-l-4",
+                    entry.rank === 1 && "border-l-yellow-400",
+                    entry.rank === 2 && "border-l-gray-300",
+                    entry.rank === 3 && "border-l-amber-600"
+                  )}
+                >
+                  {getRankDisplay(entry.rank)}
+                  
+                  <Avatar className="h-9 w-9">
+                    <AvatarFallback className={cn(
+                      "font-medium text-sm",
+                      entry.rank === 1 && "bg-yellow-100 text-yellow-800",
+                      entry.rank === 2 && "bg-gray-100 text-gray-800",
+                      entry.rank === 3 && "bg-amber-100 text-amber-800"
+                    )}>
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-1">
                       <p className={cn(
-                        "font-bold text-lg",
-                        entry.rank === 1 && "text-yellow-600",
-                        entry.rank === 2 && "text-gray-600",
-                        entry.rank === 3 && "text-amber-700",
-                        entry.rank > 3 && "text-foreground"
+                        "font-medium text-sm truncate",
+                        isCurrentUser && "text-primary"
                       )}>
-                        {entry.total_points}
+                        {entry.profile.name}
                       </p>
-                      <p className="text-xs text-muted-foreground">pontos</p>
+                      {isCurrentUser && (
+                        <span className="text-xs text-primary font-medium">(você)</span>
+                      )}
                     </div>
+                    <p className="text-xs text-muted-foreground">
+                      {entry.tasks_completed} ✓ • {entry.tasks_not_completed} ✗
+                    </p>
                   </div>
-                );
-              })}
-            </div>
-          </ScrollArea>
+                  
+                  <div className="text-right">
+                    <p className={cn(
+                      "font-bold",
+                      entry.rank === 1 && "text-yellow-600",
+                      entry.rank === 2 && "text-gray-600",
+                      entry.rank === 3 && "text-amber-700",
+                      entry.rank > 3 && "text-foreground"
+                    )}>
+                      {entry.total_points}
+                    </p>
+                    <p className="text-xs text-muted-foreground">pts</p>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         )}
       </CardContent>
     </Card>
