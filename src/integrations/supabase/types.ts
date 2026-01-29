@@ -41,14 +41,61 @@ export type Database = {
         }
         Relationships: []
       }
+      task_checklist_items: {
+        Row: {
+          completed_at: string | null
+          completed_by: string | null
+          created_at: string
+          id: string
+          is_completed: boolean | null
+          position: number
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          position?: number
+          task_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          completed_at?: string | null
+          completed_by?: string | null
+          created_at?: string
+          id?: string
+          is_completed?: boolean | null
+          position?: number
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "task_checklist_items_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tasks: {
         Row: {
           assigned_to: string | null
           created_at: string
           created_by: string
+          criticality: string | null
           description: string | null
           due_date: string | null
           id: string
+          is_mandatory: boolean | null
+          points: number | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
@@ -57,9 +104,12 @@ export type Database = {
           assigned_to?: string | null
           created_at?: string
           created_by: string
+          criticality?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          is_mandatory?: boolean | null
+          points?: number | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
@@ -68,9 +118,12 @@ export type Database = {
           assigned_to?: string | null
           created_at?: string
           created_by?: string
+          criticality?: string | null
           description?: string | null
           due_date?: string | null
           id?: string
+          is_mandatory?: boolean | null
+          points?: number | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
@@ -85,14 +138,46 @@ export type Database = {
           },
         ]
       }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_user_role: {
+        Args: { _user_id: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
+      app_role: "admin" | "task_editor" | "user"
       task_status: "pending" | "in_progress" | "done"
     }
     CompositeTypes: {
@@ -221,6 +306,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      app_role: ["admin", "task_editor", "user"],
       task_status: ["pending", "in_progress", "done"],
     },
   },

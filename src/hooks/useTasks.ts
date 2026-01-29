@@ -10,6 +10,18 @@ export interface Profile {
   avatar_url: string | null;
 }
 
+export interface ChecklistItem {
+  id: string;
+  task_id: string;
+  title: string;
+  is_completed: boolean;
+  completed_at: string | null;
+  completed_by: string | null;
+  position: number;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Task {
   id: string;
   title: string;
@@ -20,7 +32,11 @@ export interface Task {
   due_date: string | null;
   created_at: string;
   updated_at: string;
+  criticality: 'low' | 'medium' | 'high' | 'critical';
+  is_mandatory: boolean;
+  points: number;
   assignee?: Profile | null;
+  checklist_items?: ChecklistItem[];
 }
 
 export interface TaskFormData {
@@ -29,6 +45,10 @@ export interface TaskFormData {
   status: 'pending' | 'in_progress' | 'done';
   assignedToId: string;
   dueDate?: Date;
+  criticality?: 'low' | 'medium' | 'high' | 'critical';
+  isMandatory?: boolean;
+  points?: number;
+  checklistItems?: string[];
 }
 
 export function useTasks() {
@@ -71,7 +91,13 @@ export function useTasks() {
       return;
     }
 
-    setTasks(data || []);
+    // Cast criticality to the correct type
+    const typedData = (data || []).map(task => ({
+      ...task,
+      criticality: (task.criticality || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+    }));
+
+    setTasks(typedData);
     setLoading(false);
   }, [toast]);
 
@@ -85,14 +111,17 @@ export function useTasks() {
   const addTask = useCallback(async (data: TaskFormData) => {
     if (!user) return;
 
-    const { error } = await supabase.from('tasks').insert({
+    const { data: taskData, error } = await supabase.from('tasks').insert({
       title: data.title,
       description: data.description || null,
       status: data.status,
       assigned_to: data.assignedToId || null,
       created_by: user.id,
       due_date: data.dueDate?.toISOString() || null,
-    });
+      criticality: data.criticality || 'medium',
+      is_mandatory: data.isMandatory || false,
+      points: data.points || 0,
+    }).select().single();
 
     if (error) {
       toast({
@@ -101,6 +130,23 @@ export function useTasks() {
         variant: 'destructive',
       });
       return;
+    }
+
+    // Add checklist items if provided
+    if (data.checklistItems && data.checklistItems.length > 0 && taskData) {
+      const checklistInserts = data.checklistItems.map((title, index) => ({
+        task_id: taskData.id,
+        title,
+        position: index,
+      }));
+
+      const { error: checklistError } = await supabase
+        .from('task_checklist_items')
+        .insert(checklistInserts);
+
+      if (checklistError) {
+        console.error('Error adding checklist items:', checklistError);
+      }
     }
 
     fetchTasks();
@@ -114,6 +160,9 @@ export function useTasks() {
     if (data.status !== undefined) updateData.status = data.status;
     if (data.assignedToId !== undefined) updateData.assigned_to = data.assignedToId || null;
     if (data.dueDate !== undefined) updateData.due_date = data.dueDate?.toISOString() || null;
+    if (data.criticality !== undefined) updateData.criticality = data.criticality;
+    if (data.isMandatory !== undefined) updateData.is_mandatory = data.isMandatory;
+    if (data.points !== undefined) updateData.points = data.points;
 
     const { error } = await supabase
       .from('tasks')
@@ -127,6 +176,28 @@ export function useTasks() {
         variant: 'destructive',
       });
       return;
+    }
+
+    // Update checklist items if provided
+    if (data.checklistItems !== undefined) {
+      // Delete existing items
+      await supabase
+        .from('task_checklist_items')
+        .delete()
+        .eq('task_id', id);
+
+      // Insert new items
+      if (data.checklistItems.length > 0) {
+        const checklistInserts = data.checklistItems.map((title, index) => ({
+          task_id: id,
+          title,
+          position: index,
+        }));
+
+        await supabase
+          .from('task_checklist_items')
+          .insert(checklistInserts);
+      }
     }
 
     fetchTasks();
