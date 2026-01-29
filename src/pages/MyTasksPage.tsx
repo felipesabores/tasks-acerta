@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DailyTaskCard } from '@/components/tasks/DailyTaskCard';
 import { Leaderboard } from '@/components/leaderboard/Leaderboard';
@@ -27,7 +27,6 @@ import { ptBR } from 'date-fns/locale';
 export default function MyTasksPage() {
   const { tasks, completions, loading, submitDayCompletion, getTaskCompletion, stats, refetch } = useDailyTasks();
   const [selectedStatuses, setSelectedStatuses] = useState<Record<string, CompletionStatus>>({});
-  const [submitting, setSubmitting] = useState(false);
 
   const handleStatusChange = (taskId: string, status: CompletionStatus) => {
     setSelectedStatuses(prev => ({
@@ -36,23 +35,16 @@ export default function MyTasksPage() {
     }));
   };
 
-  const handleSubmitDay = async () => {
-    const taskCompletions = Object.entries(selectedStatuses).map(([taskId, status]) => ({
-      taskId,
-      status,
-    }));
-
-    if (taskCompletions.length === 0) {
-      return;
-    }
-
-    setSubmitting(true);
-    const success = await submitDayCompletion(taskCompletions);
+  const handleFinalizeTask = useCallback(async (taskId: string, status: CompletionStatus) => {
+    const success = await submitDayCompletion([{ taskId, status }]);
     if (success) {
-      setSelectedStatuses({});
+      setSelectedStatuses(prev => {
+        const updated = { ...prev };
+        delete updated[taskId];
+        return updated;
+      });
     }
-    setSubmitting(false);
-  };
+  }, [submitDayCompletion]);
 
   const pendingTasks = useMemo(() => {
     return tasks.filter(task => !getTaskCompletion(task.id));
@@ -62,7 +54,6 @@ export default function MyTasksPage() {
     return tasks.filter(task => !!getTaskCompletion(task.id));
   }, [tasks, getTaskCompletion]);
 
-  const allPendingHaveStatus = pendingTasks.every(task => selectedStatuses[task.id]);
   const today = format(new Date(), "EEEE, dd 'de' MMMM", { locale: ptBR });
 
   if (loading) {
@@ -134,21 +125,7 @@ export default function MyTasksPage() {
           {/* Pending Tasks */}
           {pendingTasks.length > 0 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
-                <Button
-                  onClick={handleSubmitDay}
-                  disabled={!allPendingHaveStatus || submitting}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  Concluir o Dia
-                </Button>
-              </div>
+              <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {pendingTasks.map(task => (
                   <DailyTaskCard
@@ -156,6 +133,7 @@ export default function MyTasksPage() {
                     task={task}
                     selectedStatus={selectedStatuses[task.id] || null}
                     onStatusChange={handleStatusChange}
+                    onFinalize={handleFinalizeTask}
                   />
                 ))}
               </div>
