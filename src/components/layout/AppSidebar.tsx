@@ -49,12 +49,14 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <div className="h-8 w-8 rounded-lg bg-sidebar-primary flex items-center justify-center">
-            <ListTodo className="h-4 w-4 text-sidebar-primary-foreground" />
-          </div>
+          <img 
+            src="https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//logo-black-white@2x.png" 
+            alt="AcertaMais Logo" 
+            className="h-8 w-auto"
+          />
           {!isCollapsed && (
             <span className="font-semibold text-lg text-sidebar-foreground">
-              TaskFlow
+              AcertaMais
             </span>
           )}
         </div>
