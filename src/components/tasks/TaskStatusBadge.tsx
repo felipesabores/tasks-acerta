@@ -1,6 +1,7 @@
 import { Badge } from '@/components/ui/badge';
-import { TaskStatus } from '@/types/task';
 import { cn } from '@/lib/utils';
+
+type TaskStatus = 'pending' | 'in_progress' | 'done';
 
 const statusConfig: Record<TaskStatus, { label: string; className: string }> = {
   pending: {
