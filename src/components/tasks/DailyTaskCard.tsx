@@ -66,18 +66,18 @@ export function DailyTaskCard({
     <TooltipProvider>
       <Card
         className={cn(
-          "transition-all duration-200 w-full max-w-full",
+          "transition-all duration-200",
           isSubmitted && "opacity-60 bg-muted/50",
           currentStatus === 'completed' && "border-primary/30",
           currentStatus === 'not_completed' && "border-destructive/30"
         )}
       >
-        <CardHeader className="pb-3 px-3 pt-3">
+        <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2">
                 <h3 className={cn(
-                  "font-semibold text-sm sm:text-base truncate",
+                  "font-semibold truncate",
                   isSubmitted && "text-muted-foreground"
                 )}>
                   {task.title}
@@ -87,7 +87,7 @@ export function DailyTaskCard({
                 )}
               </div>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+            <div className="flex items-center gap-1">
               {task.points > 0 && (
                 <div className="flex items-center gap-1 text-primary mr-2">
                   <Star className="h-4 w-4 fill-current" />
@@ -127,7 +127,7 @@ export function DailyTaskCard({
           </div>
         </CardHeader>
         
-        <CardContent className="px-3 pb-3">
+        <CardContent>
           <RadioGroup
             value={currentStatus || ''}
             onValueChange={(value) => onStatusChange(task.id, value as CompletionStatus)}

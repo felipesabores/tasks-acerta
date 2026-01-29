@@ -70,71 +70,70 @@ export default function MyTasksPage() {
 
   return (
     <AppLayout title="Tarefas Diárias">
-      <div className="space-y-6 w-full max-w-full">
+      <div className="space-y-6">
         {/* Header with date */}
-        <div className="flex items-center justify-between flex-wrap gap-2">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-5 w-5 shrink-0" />
-            <span className="capitalize text-sm sm:text-base">{today}</span>
+            <Calendar className="h-5 w-5" />
+            <span className="capitalize">{today}</span>
           </div>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-4">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3">
-              <CardTitle className="text-xs sm:text-sm font-medium">Total</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
+              <Target className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="text-xl sm:text-2xl font-bold">{stats.total}</div>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.total}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3">
-              <CardTitle className="text-xs sm:text-sm font-medium">Concluídas</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-primary" />
             </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="text-xl sm:text-2xl font-bold text-primary">{stats.completed}</div>
+            <CardContent>
+              <div className="text-2xl font-bold text-primary">{stats.completed}</div>
               {stats.total > 0 && (
                 <Progress value={(stats.completed / stats.total) * 100} className="mt-2" />
               )}
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3">
-              <CardTitle className="text-xs sm:text-sm font-medium">Não Concluídas</CardTitle>
-              <XCircle className="h-4 w-4 text-destructive shrink-0" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Não Concluídas</CardTitle>
+              <XCircle className="h-4 w-4 text-destructive" />
             </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="text-xl sm:text-2xl font-bold text-destructive">{stats.notCompleted}</div>
+            <CardContent>
+              <div className="text-2xl font-bold text-destructive">{stats.notCompleted}</div>
             </CardContent>
           </Card>
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2 px-3 pt-3">
-              <CardTitle className="text-xs sm:text-sm font-medium">Pendentes</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground shrink-0" />
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
+              <Star className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
-            <CardContent className="px-3 pb-3">
-              <div className="text-xl sm:text-2xl font-bold">{stats.pending}</div>
+            <CardContent>
+              <div className="text-2xl font-bold">{stats.pending}</div>
             </CardContent>
           </Card>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Tasks Column */}
-          <div className="lg:col-span-2 space-y-6 min-w-0">
+          <div className="lg:col-span-2 space-y-6">
             {/* Pending Tasks */}
             {pendingTasks.length > 0 && (
               <div className="space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center justify-between">
                   <h2 className="text-lg font-semibold">Tarefas Pendentes</h2>
                   <Button
                     onClick={handleSubmitDay}
                     disabled={!allPendingHaveStatus || submitting}
-                    className="bg-primary hover:bg-primary/90 w-full sm:w-auto"
-                    size="sm"
+                    className="bg-primary hover:bg-primary/90"
                   >
                     {submitting ? (
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
@@ -144,7 +143,7 @@ export default function MyTasksPage() {
                     Concluir o Dia
                   </Button>
                 </div>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   {pendingTasks.map(task => (
                     <DailyTaskCard
                       key={task.id}
@@ -160,10 +159,10 @@ export default function MyTasksPage() {
             {/* Completed Tasks */}
             {completedTasks.length > 0 && (
               <div className="space-y-4">
-              <h2 className="text-lg font-semibold text-muted-foreground">
+                <h2 className="text-lg font-semibold text-muted-foreground">
                   Tarefas Concluídas Hoje
                 </h2>
-                <div className="grid gap-4 sm:grid-cols-2">
+                <div className="grid gap-4 md:grid-cols-2">
                   {completedTasks.map(task => (
                     <DailyTaskCard
                       key={task.id}
