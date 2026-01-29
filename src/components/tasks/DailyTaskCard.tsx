@@ -22,10 +22,11 @@ import {
   Eye, 
   Info, 
   Star,
-  AlertTriangle,
+  Lock,
   CheckCircle2,
   XCircle,
-  MinusCircle
+  MinusCircle,
+  Loader2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -34,6 +35,7 @@ interface DailyTaskCardProps {
   completion?: DailyTaskCompletion;
   selectedStatus: CompletionStatus | null;
   onStatusChange: (taskId: string, status: CompletionStatus) => void;
+  onFinalize?: (taskId: string, status: CompletionStatus) => Promise<void>;
   disabled?: boolean;
 }
 
@@ -42,12 +44,21 @@ export function DailyTaskCard({
   completion,
   selectedStatus,
   onStatusChange,
+  onFinalize,
   disabled = false,
 }: DailyTaskCardProps) {
   const [reviewOpen, setReviewOpen] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
   
   const currentStatus = completion?.status || selectedStatus;
   const isSubmitted = !!completion;
+
+  const handleFinalize = async () => {
+    if (!selectedStatus || !onFinalize) return;
+    setFinalizing(true);
+    await onFinalize(task.id, selectedStatus);
+    setFinalizing(false);
+  };
 
   const getStatusIcon = (status: CompletionStatus | null) => {
     switch (status) {
@@ -75,17 +86,12 @@ export function DailyTaskCard({
         <CardHeader className="pb-3">
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className={cn(
-                  "font-semibold truncate",
-                  isSubmitted && "text-muted-foreground"
-                )}>
-                  {task.title}
-                </h3>
-                {task.is_mandatory && (
-                  <AlertTriangle className="h-4 w-4 text-destructive flex-shrink-0" />
-                )}
-              </div>
+              <h3 className={cn(
+                "font-semibold truncate",
+                isSubmitted && "text-muted-foreground"
+              )}>
+                {task.title}
+              </h3>
             </div>
             <div className="flex items-center gap-1">
               {task.points > 0 && (
@@ -95,7 +101,20 @@ export function DailyTaskCard({
                 </div>
               )}
               
-              {/* Quick view tooltip (eye icon) */}
+              {task.is_mandatory && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div className="p-1">
+                      <Lock className="h-4 w-4 text-destructive" />
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top">
+                    <p className="text-sm">Tarefa obrigatória</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+              
+              {/* Eye icon - shows description tooltip */}
               {task.description && (
                 <Tooltip>
                   <TooltipTrigger asChild>
@@ -109,7 +128,7 @@ export function DailyTaskCard({
                 </Tooltip>
               )}
               
-              {/* Info button - opens modal */}
+              {/* Info button - opens modal for review/change */}
               <Button 
                 variant="ghost" 
                 size="icon" 
@@ -127,7 +146,7 @@ export function DailyTaskCard({
           </div>
         </CardHeader>
         
-        <CardContent>
+        <CardContent className="space-y-4">
           <RadioGroup
             value={currentStatus || ''}
             onValueChange={(value) => onStatusChange(task.id, value as CompletionStatus)}
@@ -183,6 +202,23 @@ export function DailyTaskCard({
               </Label>
             </div>
           </RadioGroup>
+
+          {/* Finalize button - only shown when not submitted and has a status selected */}
+          {!isSubmitted && onFinalize && (
+            <Button
+              onClick={handleFinalize}
+              disabled={!selectedStatus || finalizing}
+              className="w-full"
+              size="sm"
+            >
+              {finalizing ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <CheckCircle2 className="h-4 w-4 mr-2" />
+              )}
+              Finalizar
+            </Button>
+          )}
         </CardContent>
       </Card>
 
@@ -192,7 +228,7 @@ export function DailyTaskCard({
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Info className="h-5 w-5" />
-              Detalhes da Tarefa
+              Revisar Tarefa
             </DialogTitle>
           </DialogHeader>
           
@@ -201,7 +237,7 @@ export function DailyTaskCard({
               <h3 className="font-semibold text-lg">{task.title}</h3>
               {task.is_mandatory && (
                 <div className="flex items-center gap-1 text-destructive text-sm mt-1">
-                  <AlertTriangle className="h-4 w-4" />
+                  <Lock className="h-4 w-4" />
                   <span>Tarefa obrigatória</span>
                 </div>
               )}
