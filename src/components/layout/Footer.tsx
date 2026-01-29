@@ -1,4 +1,4 @@
-const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais.png";
+const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais azul.png";
 
 export function Footer() {
   const currentYear = new Date().getFullYear();
