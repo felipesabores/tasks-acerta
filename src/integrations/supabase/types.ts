@@ -14,6 +14,102 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_alerts: {
+        Row: {
+          alert_date: string
+          created_at: string
+          id: string
+          is_read: boolean
+          message: string
+          profile_id: string
+          task_id: string
+        }
+        Insert: {
+          alert_date?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message: string
+          profile_id: string
+          task_id: string
+        }
+        Update: {
+          alert_date?: string
+          created_at?: string
+          id?: string
+          is_read?: boolean
+          message?: string
+          profile_id?: string
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_alerts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "admin_alerts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_task_completions: {
+        Row: {
+          completion_date: string
+          created_at: string
+          id: string
+          points_earned: number
+          profile_id: string
+          status: Database["public"]["Enums"]["daily_completion_status"]
+          task_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          completion_date?: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          profile_id: string
+          status: Database["public"]["Enums"]["daily_completion_status"]
+          task_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          completion_date?: string
+          created_at?: string
+          id?: string
+          points_earned?: number
+          profile_id?: string
+          status?: Database["public"]["Enums"]["daily_completion_status"]
+          task_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_task_completions_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_task_completions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -138,6 +234,44 @@ export type Database = {
           },
         ]
       }
+      user_points: {
+        Row: {
+          id: string
+          profile_id: string
+          tasks_completed: number
+          tasks_no_demand: number
+          tasks_not_completed: number
+          total_points: number
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          profile_id: string
+          tasks_completed?: number
+          tasks_no_demand?: number
+          tasks_not_completed?: number
+          total_points?: number
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          profile_id?: string
+          tasks_completed?: number
+          tasks_no_demand?: number
+          tasks_not_completed?: number
+          total_points?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_points_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_roles: {
         Row: {
           created_at: string
@@ -178,6 +312,7 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "task_editor" | "user"
+      daily_completion_status: "completed" | "not_completed" | "no_demand"
       task_status: "pending" | "in_progress" | "done"
     }
     CompositeTypes: {
@@ -307,6 +442,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "task_editor", "user"],
+      daily_completion_status: ["completed", "not_completed", "no_demand"],
       task_status: ["pending", "in_progress", "done"],
     },
   },

@@ -66,14 +66,14 @@ export function AppSidebar() {
             <SidebarMenu>
               {/* My Tasks - visible to all users */}
               <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Minhas Tarefas">
+                <SidebarMenuButton asChild tooltip="Todas as tarefas diárias">
                   <NavLink
                     to="/my-tasks"
                     className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
                     activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
                   >
                     <ClipboardList className="h-4 w-4" />
-                    {!isCollapsed && <span>Minhas Tarefas</span>}
+                    {!isCollapsed && <span>Todas as tarefas diárias</span>}
                   </NavLink>
                 </SidebarMenuButton>
               </SidebarMenuItem>
