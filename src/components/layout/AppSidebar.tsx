@@ -1,7 +1,7 @@
 import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
-const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais.png";
+const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais branco.png";
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
