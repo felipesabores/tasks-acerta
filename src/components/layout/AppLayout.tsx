@@ -17,7 +17,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
             <SidebarTrigger />
             <h1 className="font-semibold text-lg truncate">{title}</h1>
           </header>
-          <div className="flex-1 p-4 md:p-6 overflow-auto">{children}</div>
+          <div className="flex-1 p-4 md:p-6 overflow-y-auto overflow-x-hidden">{children}</div>
           <Footer />
         </main>
       </div>
