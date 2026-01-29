@@ -1,7 +1,7 @@
-import { Task, TaskStatus, User } from '@/types/task';
+import { Task } from '@/hooks/useTasks';
 import { TaskCard } from './TaskCard';
 import { Button } from '@/components/ui/button';
-import { Plus, Search } from 'lucide-react';
+import { Plus, Search, Loader2 } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import {
   Select,
@@ -14,16 +14,18 @@ import { useState, useMemo } from 'react';
 
 interface TaskListProps {
   tasks: Task[];
-  users: User[];
+  users: Array<{ id: string; name: string }>;
+  loading?: boolean;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: TaskStatus) => void;
+  onStatusChange: (id: string, status: 'pending' | 'in_progress' | 'done') => void;
   onNewTask: () => void;
 }
 
 export function TaskList({
   tasks,
   users,
+  loading,
   onEdit,
   onDelete,
   onStatusChange,
@@ -39,11 +41,19 @@ export function TaskList({
         task.title.toLowerCase().includes(search.toLowerCase()) ||
         task.description?.toLowerCase().includes(search.toLowerCase());
       const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
-      const matchesUser = userFilter === 'all' || task.assignedTo.id === userFilter;
+      const matchesUser = userFilter === 'all' || task.assigned_to === userFilter;
 
       return matchesSearch && matchesStatus && matchesUser;
     });
   }, [tasks, search, statusFilter, userFilter]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

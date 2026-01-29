@@ -2,12 +2,11 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TaskList } from '@/components/tasks/TaskList';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
-import { useTasks } from '@/hooks/useTasks';
-import { Task, TaskFormData } from '@/types/task';
+import { useTasks, Task, TaskFormData } from '@/hooks/useTasks';
 import { useToast } from '@/hooks/use-toast';
 
 export default function TasksPage() {
-  const { tasks, users, addTask, updateTask, deleteTask, updateTaskStatus } = useTasks();
+  const { tasks, users, loading, addTask, updateTask, deleteTask, updateTaskStatus } = useTasks();
   const { toast } = useToast();
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
@@ -22,15 +21,15 @@ export default function TasksPage() {
     setDialogOpen(true);
   };
 
-  const handleSubmit = (data: TaskFormData) => {
+  const handleSubmit = async (data: TaskFormData) => {
     if (editingTask) {
-      updateTask(editingTask.id, data);
+      await updateTask(editingTask.id, data);
       toast({
         title: 'Tarefa atualizada',
         description: 'A tarefa foi atualizada com sucesso.',
       });
     } else {
-      addTask(data);
+      await addTask(data);
       toast({
         title: 'Tarefa criada',
         description: 'A nova tarefa foi criada com sucesso.',
@@ -38,8 +37,8 @@ export default function TasksPage() {
     }
   };
 
-  const handleDelete = (id: string) => {
-    deleteTask(id);
+  const handleDelete = async (id: string) => {
+    await deleteTask(id);
     toast({
       title: 'Tarefa excluída',
       description: 'A tarefa foi removida com sucesso.',
@@ -52,6 +51,7 @@ export default function TasksPage() {
       <TaskList
         tasks={tasks}
         users={users}
+        loading={loading}
         onEdit={handleEdit}
         onDelete={handleDelete}
         onStatusChange={updateTaskStatus}

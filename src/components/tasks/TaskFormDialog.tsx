@@ -26,7 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Task, TaskFormData, TaskStatus, User } from '@/types/task';
+import { Task, TaskFormData } from '@/hooks/useTasks';
 import { Calendar } from '@/components/ui/calendar';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { CalendarIcon } from 'lucide-react';
@@ -47,7 +47,7 @@ interface TaskFormDialogProps {
   onOpenChange: (open: boolean) => void;
   onSubmit: (data: TaskFormData) => void;
   task?: Task | null;
-  users: User[];
+  users: Array<{ id: string; name: string }>;
 }
 
 export function TaskFormDialog({
@@ -62,7 +62,7 @@ export function TaskFormDialog({
     defaultValues: {
       title: '',
       description: '',
-      status: 'pending' as TaskStatus,
+      status: 'pending',
       assignedToId: '',
       dueDate: undefined,
     },
@@ -74,8 +74,8 @@ export function TaskFormDialog({
         title: task.title,
         description: task.description || '',
         status: task.status,
-        assignedToId: task.assignedTo.id,
-        dueDate: task.dueDate,
+        assignedToId: task.assigned_to || '',
+        dueDate: task.due_date ? new Date(task.due_date) : undefined,
       });
     } else {
       form.reset({

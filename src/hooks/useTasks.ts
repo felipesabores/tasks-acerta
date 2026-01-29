@@ -1,65 +1,155 @@
-import { useState, useCallback } from 'react';
-import { Task, TaskFormData, TaskStatus } from '@/types/task';
-import { mockTasks, mockUsers } from '@/data/mockData';
+import { useState, useEffect, useCallback } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+
+export interface Profile {
+  id: string;
+  user_id: string;
+  name: string;
+  avatar_url: string | null;
+}
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string | null;
+  status: 'pending' | 'in_progress' | 'done';
+  assigned_to: string | null;
+  created_by: string;
+  due_date: string | null;
+  created_at: string;
+  updated_at: string;
+  assignee?: Profile | null;
+}
+
+export interface TaskFormData {
+  title: string;
+  description?: string;
+  status: 'pending' | 'in_progress' | 'done';
+  assignedToId: string;
+  dueDate?: Date;
+}
 
 export function useTasks() {
-  const [tasks, setTasks] = useState<Task[]>(mockTasks);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [profiles, setProfiles] = useState<Profile[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addTask = useCallback((data: TaskFormData) => {
-    const assignedUser = mockUsers.find(u => u.id === data.assignedToId);
-    if (!assignedUser) return;
+  const fetchProfiles = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('name');
 
-    const newTask: Task = {
-      id: Date.now().toString(),
+    if (error) {
+      console.error('Error fetching profiles:', error);
+      return;
+    }
+
+    setProfiles(data || []);
+  }, []);
+
+  const fetchTasks = useCallback(async () => {
+    const { data, error } = await supabase
+      .from('tasks')
+      .select(`
+        *,
+        assignee:profiles!tasks_assigned_to_fkey(*)
+      `)
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching tasks:', error);
+      toast({
+        title: 'Erro ao carregar tarefas',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setTasks(data || []);
+    setLoading(false);
+  }, [toast]);
+
+  useEffect(() => {
+    if (user) {
+      fetchProfiles();
+      fetchTasks();
+    }
+  }, [user, fetchProfiles, fetchTasks]);
+
+  const addTask = useCallback(async (data: TaskFormData) => {
+    if (!user) return;
+
+    const { error } = await supabase.from('tasks').insert({
       title: data.title,
-      description: data.description,
+      description: data.description || null,
       status: data.status,
-      assignedTo: assignedUser,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      dueDate: data.dueDate,
-    };
+      assigned_to: data.assignedToId || null,
+      created_by: user.id,
+      due_date: data.dueDate?.toISOString() || null,
+    });
 
-    setTasks(prev => [newTask, ...prev]);
-  }, []);
+    if (error) {
+      toast({
+        title: 'Erro ao criar tarefa',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
 
-  const updateTask = useCallback((id: string, data: Partial<TaskFormData>) => {
-    setTasks(prev =>
-      prev.map(task => {
-        if (task.id !== id) return task;
+    fetchTasks();
+  }, [user, fetchTasks, toast]);
 
-        const assignedUser = data.assignedToId
-          ? mockUsers.find(u => u.id === data.assignedToId) || task.assignedTo
-          : task.assignedTo;
+  const updateTask = useCallback(async (id: string, data: Partial<TaskFormData>) => {
+    const updateData: Record<string, unknown> = {};
 
-        return {
-          ...task,
-          ...(data.title && { title: data.title }),
-          ...(data.description !== undefined && { description: data.description }),
-          ...(data.status && { status: data.status }),
-          ...(data.dueDate !== undefined && { dueDate: data.dueDate }),
-          assignedTo: assignedUser,
-          updatedAt: new Date(),
-        };
-      })
-    );
-  }, []);
+    if (data.title !== undefined) updateData.title = data.title;
+    if (data.description !== undefined) updateData.description = data.description || null;
+    if (data.status !== undefined) updateData.status = data.status;
+    if (data.assignedToId !== undefined) updateData.assigned_to = data.assignedToId || null;
+    if (data.dueDate !== undefined) updateData.due_date = data.dueDate?.toISOString() || null;
 
-  const deleteTask = useCallback((id: string) => {
-    setTasks(prev => prev.filter(task => task.id !== id));
-  }, []);
+    const { error } = await supabase
+      .from('tasks')
+      .update(updateData)
+      .eq('id', id);
 
-  const updateTaskStatus = useCallback((id: string, status: TaskStatus) => {
-    updateTask(id, { status });
+    if (error) {
+      toast({
+        title: 'Erro ao atualizar tarefa',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    fetchTasks();
+  }, [fetchTasks, toast]);
+
+  const deleteTask = useCallback(async (id: string) => {
+    const { error } = await supabase.from('tasks').delete().eq('id', id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao excluir tarefa',
+        description: error.message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    fetchTasks();
+  }, [fetchTasks, toast]);
+
+  const updateTaskStatus = useCallback(async (id: string, status: 'pending' | 'in_progress' | 'done') => {
+    await updateTask(id, { status });
   }, [updateTask]);
-
-  const getTasksByUser = useCallback((userId: string) => {
-    return tasks.filter(task => task.assignedTo.id === userId);
-  }, [tasks]);
-
-  const getTasksByStatus = useCallback((status: TaskStatus) => {
-    return tasks.filter(task => task.status === status);
-  }, [tasks]);
 
   const getStats = useCallback(() => {
     const total = tasks.length;
@@ -72,14 +162,14 @@ export function useTasks() {
   }, [tasks]);
 
   const getStatsByUser = useCallback(() => {
-    return mockUsers.map(user => {
-      const userTasks = tasks.filter(t => t.assignedTo.id === user.id);
+    return profiles.map(profile => {
+      const userTasks = tasks.filter(t => t.assigned_to === profile.id);
       const done = userTasks.filter(t => t.status === 'done').length;
       const total = userTasks.length;
       const completionRate = total > 0 ? Math.round((done / total) * 100) : 0;
 
       return {
-        user,
+        user: { id: profile.id, name: profile.name },
         total,
         done,
         pending: userTasks.filter(t => t.status === 'pending').length,
@@ -87,18 +177,19 @@ export function useTasks() {
         completionRate,
       };
     });
-  }, [tasks]);
+  }, [tasks, profiles]);
 
   return {
     tasks,
-    users: mockUsers,
+    users: profiles.map(p => ({ id: p.id, name: p.name })),
+    profiles,
+    loading,
     addTask,
     updateTask,
     deleteTask,
     updateTaskStatus,
-    getTasksByUser,
-    getTasksByStatus,
     getStats,
     getStatsByUser,
+    refetch: fetchTasks,
   };
 }

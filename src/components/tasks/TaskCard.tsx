@@ -1,4 +1,3 @@
-import { Task, TaskStatus } from '@/types/task';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -13,16 +12,18 @@ import {
 import { Calendar, MoreVertical, Pencil, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { Task } from '@/hooks/useTasks';
 
 interface TaskCardProps {
   task: Task;
   onEdit: (task: Task) => void;
   onDelete: (id: string) => void;
-  onStatusChange: (id: string, status: TaskStatus) => void;
+  onStatusChange: (id: string, status: 'pending' | 'in_progress' | 'done') => void;
 }
 
 export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardProps) {
-  const initials = task.assignedTo.name
+  const assigneeName = task.assignee?.name || 'Não atribuído';
+  const initials = assigneeName
     .split(' ')
     .map(n => n[0])
     .join('')
@@ -86,13 +87,13 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange }: TaskCardPro
                 {initials}
               </AvatarFallback>
             </Avatar>
-            <span className="text-sm text-muted-foreground">{task.assignedTo.name}</span>
+            <span className="text-sm text-muted-foreground">{assigneeName}</span>
           </div>
           <div className="flex items-center gap-2">
-            {task.dueDate && (
+            {task.due_date && (
               <div className="flex items-center gap-1 text-xs text-muted-foreground">
                 <Calendar className="h-3 w-3" />
-                {format(task.dueDate, "dd MMM", { locale: ptBR })}
+                {format(new Date(task.due_date), "dd MMM", { locale: ptBR })}
               </div>
             )}
             <TaskStatusBadge status={task.status} />
