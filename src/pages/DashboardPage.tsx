@@ -1,7 +1,8 @@
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Dashboard } from '@/components/dashboard/Dashboard';
 import { AdminAlerts } from '@/components/admin/AdminAlerts';
-import { Leaderboard } from '@/components/leaderboard/Leaderboard';
+import { HorizontalLeaderboard } from '@/components/leaderboard/HorizontalLeaderboard';
+import { UserGreeting } from '@/components/home/UserGreeting';
 import { useTasks } from '@/hooks/useTasks';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Loader2 } from 'lucide-react';
@@ -23,15 +24,17 @@ export default function DashboardPage() {
   return (
     <AppLayout title="Dashboard">
       <div className="space-y-6">
+        {/* Greeting */}
+        <UserGreeting />
+
+        {/* Horizontal Leaderboard */}
+        <HorizontalLeaderboard />
+
+        {/* Dashboard Stats */}
         <Dashboard stats={getStats()} userStats={getStatsByUser()} />
         
-        <div className="grid gap-6 lg:grid-cols-2">
-          {/* Leaderboard de Pontuação */}
-          <Leaderboard />
-          
-          {/* Alertas para Admin */}
-          {isAdmin && <AdminAlerts />}
-        </div>
+        {/* Alertas para Admin */}
+        {isAdmin && <AdminAlerts />}
       </div>
     </AppLayout>
   );
