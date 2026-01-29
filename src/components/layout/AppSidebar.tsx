@@ -7,6 +7,7 @@ import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import {
   Sidebar,
   SidebarContent,
@@ -158,6 +159,7 @@ export function AppSidebar() {
           >
             <LogOut className="h-4 w-4" />
           </Button>
+          <ThemeToggle />
         </div>
       </SidebarFooter>
     </Sidebar>
