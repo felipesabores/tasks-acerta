@@ -1,5 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
+import { Footer } from './Footer';
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -17,6 +18,7 @@ export function AppLayout({ children, title }: AppLayoutProps) {
             <h1 className="font-semibold text-lg">{title}</h1>
           </header>
           <div className="flex-1 p-6 overflow-auto">{children}</div>
+          <Footer />
         </main>
       </div>
     </SidebarProvider>

@@ -10,7 +10,9 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { ListTodo, Loader2 } from 'lucide-react';
+import { Loader2 } from 'lucide-react';
+
+const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais.png";
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -91,10 +93,14 @@ export default function AuthPage() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="mx-auto mb-4 h-12 w-12 rounded-xl bg-primary flex items-center justify-center">
-            <ListTodo className="h-6 w-6 text-primary-foreground" />
+          <div className="mx-auto mb-4 flex items-center justify-center">
+            <img 
+              src={LOGO_URL} 
+              alt="AcertaMais Logo" 
+              className="h-12 w-auto"
+            />
           </div>
-          <CardTitle className="text-2xl">TaskFlow</CardTitle>
+          <CardTitle className="text-2xl">AcertaMais</CardTitle>
           <CardDescription>Gerencie suas tarefas de forma simples</CardDescription>
         </CardHeader>
         <CardContent>
