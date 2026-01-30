@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Select,
   SelectContent,
@@ -167,167 +168,189 @@ export default function UsersPage() {
 
   return (
     <AppLayout title="Gerenciar Usuários">
-      <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
-          <TabsTrigger value="users" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Usuários
-          </TabsTrigger>
-          <TabsTrigger value="register" className="flex items-center gap-2">
-            <UserPlus className="h-4 w-4" />
-            Cadastrar
-          </TabsTrigger>
-        </TabsList>
+      <div className="space-y-6">
+        <PageHeader
+          title="Gerenciar Usuários"
+          subtitle="Gerencie os usuários do sistema e defina seus papéis"
+          icon={Users}
+          variant="primary"
+        />
 
-        <TabsContent value="users" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Users className="h-5 w-5" />
-                Usuários do Sistema
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <div className="flex items-center justify-center py-8">
-                  <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                </div>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>Usuário</TableHead>
-                      <TableHead>Cargo</TableHead>
-                      <TableHead>WhatsApp</TableHead>
-                      <TableHead>Papel Atual</TableHead>
-                      <TableHead>Alterar Papel</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {users.map(user => {
-                      const initials = user.name
-                        .split(' ')
-                        .map(n => n[0])
-                        .join('')
-                        .toUpperCase()
-                        .slice(0, 2);
+        <Tabs defaultValue="users" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="users" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Usuários
+            </TabsTrigger>
+            <TabsTrigger value="register" className="flex items-center gap-2">
+              <UserPlus className="h-4 w-4" />
+              Cadastrar
+            </TabsTrigger>
+          </TabsList>
 
-                      return (
-                        <TableRow key={user.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                              <Avatar className="h-8 w-8">
-                                <AvatarFallback className="text-xs bg-primary/10 text-primary">
-                                  {initials}
-                                </AvatarFallback>
-                              </Avatar>
-                              <div>
-                                <p className="font-medium">{user.name}</p>
-                              </div>
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-muted-foreground">
-                              {user.cargo || '-'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <span className="text-muted-foreground">
-                              {user.whatsapp || '-'}
-                            </span>
-                          </TableCell>
-                          <TableCell>
-                            <div className="flex items-center gap-2">
-                              {getRoleIcon(user.role)}
-                              {getRoleBadge(user.role)}
-                            </div>
-                          </TableCell>
-                          <TableCell>
-                            <Select
-                              value={user.role}
-                              onValueChange={(value: AppRole) => 
-                                handleRoleChange(user.id, user.user_id, value)
-                              }
-                              disabled={updatingUserId === user.id}
-                            >
-                              <SelectTrigger className="w-[180px]">
-                                {updatingUserId === user.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <SelectValue />
-                                )}
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="user">Usuário</SelectItem>
-                                <SelectItem value="task_editor">Editor de Tarefas</SelectItem>
-                                <SelectItem value="admin">Administrador</SelectItem>
-                              </SelectContent>
-                            </Select>
-                          </TableCell>
+          <TabsContent value="users" className="space-y-6">
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <Users className="h-4 w-4 text-primary" />
+                  </div>
+                  Usuários do Sistema
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {loading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  </div>
+                ) : (
+                  <div className="rounded-lg border overflow-hidden">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/50 hover:bg-muted/50">
+                          <TableHead>Usuário</TableHead>
+                          <TableHead>Cargo</TableHead>
+                          <TableHead>WhatsApp</TableHead>
+                          <TableHead>Papel Atual</TableHead>
+                          <TableHead>Alterar Papel</TableHead>
                         </TableRow>
-                      );
-                    })}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                      </TableHeader>
+                      <TableBody>
+                        {users.map(user => {
+                          const initials = user.name
+                            .split(' ')
+                            .map(n => n[0])
+                            .join('')
+                            .toUpperCase()
+                            .slice(0, 2);
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Descrição dos Papéis</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-start gap-3">
-                <Shield className="h-5 w-5 text-primary mt-0.5" />
-                <div>
-                  <p className="font-medium">Administrador</p>
-                  <p className="text-sm text-muted-foreground">
-                    Controle total sobre o sistema. Pode criar, editar e excluir tarefas, 
-                    gerenciar usuários e alterar papéis.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <Edit className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="font-medium">Editor de Tarefas</p>
-                  <p className="text-sm text-muted-foreground">
-                    Pode criar e editar tarefas, mas não pode excluí-las ou gerenciar usuários.
-                  </p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <User className="h-5 w-5 text-muted-foreground mt-0.5" />
-                <div>
-                  <p className="font-medium">Usuário</p>
-                  <p className="text-sm text-muted-foreground">
-                    Pode visualizar suas tarefas atribuídas e marcar itens do checklist como concluídos.
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+                          return (
+                            <TableRow key={user.id} className="transition-colors hover:bg-muted/30">
+                              <TableCell>
+                                <div className="flex items-center gap-3">
+                                  <Avatar className="h-8 w-8">
+                                    <AvatarFallback className="text-xs bg-primary/10 text-primary">
+                                      {initials}
+                                    </AvatarFallback>
+                                  </Avatar>
+                                  <div>
+                                    <p className="font-medium">{user.name}</p>
+                                  </div>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-muted-foreground">
+                                  {user.cargo || '-'}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <span className="text-muted-foreground">
+                                  {user.whatsapp || '-'}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  {getRoleIcon(user.role)}
+                                  {getRoleBadge(user.role)}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Select
+                                  value={user.role}
+                                  onValueChange={(value: AppRole) => 
+                                    handleRoleChange(user.id, user.user_id, value)
+                                  }
+                                  disabled={updatingUserId === user.id}
+                                >
+                                  <SelectTrigger className="w-[180px]">
+                                    {updatingUserId === user.id ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <SelectValue />
+                                    )}
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="user">Usuário</SelectItem>
+                                    <SelectItem value="task_editor">Editor de Tarefas</SelectItem>
+                                    <SelectItem value="admin">Administrador</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
 
-        <TabsContent value="register">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <UserPlus className="h-5 w-5" />
-                Cadastrar Novo Usuário
-              </CardTitle>
-              <CardDescription>
-                Preencha os dados do novo responsável. Nome, WhatsApp e cargo são obrigatórios.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <UserRegistrationForm onSuccess={fetchUsers} />
-            </CardContent>
-          </Card>
-        </TabsContent>
+            {/* Role descriptions with premium style */}
+            <Card className="border-muted/50 bg-gradient-to-br from-muted/30 via-muted/10 to-transparent">
+              <CardHeader>
+                <CardTitle>Descrição dos Papéis</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-primary/5 border border-primary/10">
+                  <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center shrink-0">
+                    <Shield className="h-4 w-4 text-primary" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Administrador</p>
+                    <p className="text-sm text-muted-foreground">
+                      Controle total sobre o sistema. Pode criar, editar e excluir tarefas, 
+                      gerenciar usuários e alterar papéis.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-muted/50">
+                  <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <Edit className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Editor de Tarefas</p>
+                    <p className="text-sm text-muted-foreground">
+                      Pode criar e editar tarefas, mas não pode excluí-las ou gerenciar usuários.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/30 border border-muted/50">
+                  <div className="h-8 w-8 rounded-lg bg-muted flex items-center justify-center shrink-0">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Usuário</p>
+                    <p className="text-sm text-muted-foreground">
+                      Pode visualizar suas tarefas atribuídas e marcar itens do checklist como concluídos.
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
 
-      </Tabs>
+          <TabsContent value="register">
+            <Card className="border-border/50">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                    <UserPlus className="h-4 w-4 text-primary" />
+                  </div>
+                  Cadastrar Novo Usuário
+                </CardTitle>
+                <CardDescription>
+                  Preencha os dados do novo responsável. Nome, WhatsApp e cargo são obrigatórios.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <UserRegistrationForm onSuccess={fetchUsers} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+        </Tabs>
+      </div>
     </AppLayout>
   );
 }

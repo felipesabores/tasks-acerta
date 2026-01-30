@@ -1,7 +1,6 @@
 import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home, Zap } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
-
-const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais branco.png";
+import { Logo } from '@/components/ui/logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
@@ -54,11 +53,7 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center justify-center w-full">
-          <img 
-            src={LOGO_URL} 
-            alt="AcertaMais Logo" 
-            className="h-8 w-auto"
-          />
+          <Logo size="md" forceVariant="dark" />
         </div>
       </SidebarHeader>
       <SidebarContent>

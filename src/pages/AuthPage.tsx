@@ -10,8 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-
-const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais azul.png";
+import { Logo } from '@/components/ui/logo';
 
 const loginSchema = z.object({
   email: z.string().email('Email inválido'),
@@ -59,11 +58,7 @@ export default function AuthPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-4 flex items-center justify-center">
-            <img 
-              src={LOGO_URL} 
-              alt="AcertaMais Logo" 
-              className="h-12 w-auto"
-            />
+            <Logo size="xl" />
           </div>
           <CardTitle className="text-2xl">AcertaMais</CardTitle>
           <CardDescription>Gerencie suas tarefas de forma simples</CardDescription>

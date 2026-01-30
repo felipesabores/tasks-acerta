@@ -2,8 +2,10 @@ import { useState } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { TaskList } from '@/components/tasks/TaskList';
 import { TaskFormDialog } from '@/components/tasks/TaskFormDialog';
+import { PageHeader } from '@/components/ui/page-header';
 import { useTasks, Task, TaskFormData } from '@/hooks/useTasks';
 import { useToast } from '@/hooks/use-toast';
+import { ListTodo } from 'lucide-react';
 
 export default function TasksPage() {
   const { tasks, users, loading, addTask, updateTask, deleteTask, updateTaskStatus, refetch } = useTasks();
@@ -48,16 +50,25 @@ export default function TasksPage() {
 
   return (
     <AppLayout title="Tarefas">
-      <TaskList
-        tasks={tasks}
-        users={users}
-        loading={loading}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-        onStatusChange={updateTaskStatus}
-        onNewTask={handleNewTask}
-        onTaskUpdated={refetch}
-      />
+      <div className="space-y-6">
+        <PageHeader
+          title="Gerenciar Tarefas"
+          subtitle="Crie, edite e gerencie todas as tarefas do sistema"
+          icon={ListTodo}
+          variant="primary"
+        />
+
+        <TaskList
+          tasks={tasks}
+          users={users}
+          loading={loading}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+          onStatusChange={updateTaskStatus}
+          onNewTask={handleNewTask}
+          onTaskUpdated={refetch}
+        />
+      </div>
       <TaskFormDialog
         open={dialogOpen}
         onOpenChange={setDialogOpen}
