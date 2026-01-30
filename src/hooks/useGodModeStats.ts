@@ -7,7 +7,7 @@ export type DateRange = {
   to: Date;
 };
 
-export type PeriodPreset = 'today' | 'yesterday' | 'last7days' | 'last30days' | 'thisMonth' | 'lastMonth' | 'custom';
+export type PeriodPreset = 'today' | 'yesterday' | 'last7days' | 'last15days' | 'lastMonth' | 'lastYear' | 'custom';
 
 interface TaskStats {
   total: number;
@@ -260,14 +260,13 @@ export function getDateRangeFromPreset(preset: PeriodPreset): DateRange {
       return { from: startOfDay(yesterday), to: endOfDay(yesterday) };
     case 'last7days':
       return { from: startOfDay(subDays(today, 6)), to: endOfDay(today) };
-    case 'last30days':
-      return { from: startOfDay(subDays(today, 29)), to: endOfDay(today) };
-    case 'thisMonth':
-      return { from: startOfMonth(today), to: endOfMonth(today) };
+    case 'last15days':
+      return { from: startOfDay(subDays(today, 14)), to: endOfDay(today) };
     case 'lastMonth':
-      const lastMonth = subMonths(today, 1);
-      return { from: startOfMonth(lastMonth), to: endOfMonth(lastMonth) };
+      return { from: startOfDay(subDays(today, 29)), to: endOfDay(today) };
+    case 'lastYear':
+      return { from: startOfDay(subDays(today, 364)), to: endOfDay(today) };
     default:
-      return { from: startOfDay(subDays(today, 6)), to: endOfDay(today) };
+      return { from: startOfDay(today), to: endOfDay(today) };
   }
 }

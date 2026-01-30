@@ -28,14 +28,14 @@ const presets: { value: PeriodPreset; label: string }[] = [
   { value: 'today', label: 'Hoje' },
   { value: 'yesterday', label: 'Ontem' },
   { value: 'last7days', label: 'Últimos 7 dias' },
-  { value: 'last30days', label: 'Últimos 30 dias' },
-  { value: 'thisMonth', label: 'Este mês' },
-  { value: 'lastMonth', label: 'Mês passado' },
+  { value: 'last15days', label: 'Últimos 15 dias' },
+  { value: 'lastMonth', label: 'Último mês' },
+  { value: 'lastYear', label: 'Último ano' },
   { value: 'custom', label: 'Personalizado' },
 ];
 
 export function DateRangePicker({ dateRange, onDateRangeChange }: DateRangePickerProps) {
-  const [selectedPreset, setSelectedPreset] = useState<PeriodPreset>('last7days');
+  const [selectedPreset, setSelectedPreset] = useState<PeriodPreset>('today');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
 
   const handlePresetChange = (preset: PeriodPreset) => {
