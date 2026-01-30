@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home } from 'lucide-react';
+import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home, Zap } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 
 const LOGO_URL = "https://iteasvfrtzlzxifvnpkk.supabase.co/storage/v1/object/public/logos//acerta mais branco.png";
@@ -25,7 +25,7 @@ import {
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut } = useAuth();
-  const { role, isAdmin, canCreateTasks } = useUserRole();
+  const { role, isAdmin, isGodMode, canCreateTasks } = useUserRole();
   const isCollapsed = state === 'collapsed';
 
   const userEmail = user?.email || '';
@@ -39,6 +39,8 @@ export function AppSidebar() {
 
   const getRoleLabel = () => {
     switch (role) {
+      case 'god_mode':
+        return 'God Mode';
       case 'admin':
         return 'Admin';
       case 'task_editor':
@@ -136,6 +138,22 @@ export function AppSidebar() {
                     >
                       <Users className="h-4 w-4" />
                       {!isCollapsed && <span>Usuários</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {/* God Mode - visible only to god_mode users */}
+              {isGodMode && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="God Mode">
+                    <NavLink
+                      to="/god-mode"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <Zap className="h-4 w-4" />
+                      {!isCollapsed && <span>God Mode</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>

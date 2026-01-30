@@ -11,6 +11,7 @@ import TasksPage from "./pages/TasksPage";
 import MyTasksPage from "./pages/MyTasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import UsersPage from "./pages/UsersPage";
+import GodModePage from "./pages/GodModePage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -63,6 +64,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <UsersPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/god-mode"
+                element={
+                  <ProtectedRoute>
+                    <GodModePage />
                   </ProtectedRoute>
                 }
               />
