@@ -7,6 +7,7 @@ import { PerformanceChart } from '@/components/godmode/PerformanceChart';
 import { UserRankingTable } from '@/components/godmode/UserRankingTable';
 import { CriticalityDonut } from '@/components/godmode/CriticalityDonut';
 import { AlertsSummary } from '@/components/godmode/AlertsSummary';
+import { GodModeLoadingSkeleton } from '@/components/godmode/GodModeSkeletons';
 import { 
   ListTodo, 
   CheckCircle2, 
@@ -14,9 +15,14 @@ import {
   Users, 
   Activity, 
   TrendingUp,
-  Loader2,
   Zap,
-  Target
+  Target,
+  Award,
+  AlertTriangle,
+  BarChart3,
+  Percent,
+  UserCheck,
+  Flame
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 
@@ -26,13 +32,8 @@ export default function GodModePage() {
 
   if (loading) {
     return (
-      <AppLayout title="God Mode">
-        <div className="flex items-center justify-center py-24">
-          <div className="flex flex-col items-center gap-4">
-            <Loader2 className="h-10 w-10 animate-spin text-primary" />
-            <p className="text-muted-foreground">Carregando métricas...</p>
-          </div>
-        </div>
+      <AppLayout title="">
+        <GodModeLoadingSkeleton />
       </AppLayout>
     );
   }
@@ -78,7 +79,7 @@ export default function GodModePage() {
           <DateRangePicker dateRange={dateRange} onDateRangeChange={setDateRange} />
         </div>
 
-        {/* Primary KPIs */}
+        {/* Primary KPIs - Task Overview */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <KPICard
             title="Total de Tarefas"
@@ -111,7 +112,7 @@ export default function GodModePage() {
           />
         </div>
 
-        {/* Secondary KPIs */}
+        {/* Secondary KPIs - User Metrics */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
           <KPICard
             title="Usuários Totais"
@@ -123,13 +124,15 @@ export default function GodModePage() {
             title="Usuários Ativos"
             value={data.activeUsers}
             subtitle="No período selecionado"
-            icon={Activity}
+            icon={UserCheck}
             size="sm"
+            trend={{ value: data.advancedKPIs.engagementRate, isPositive: data.advancedKPIs.engagementRate >= 70 }}
           />
           <KPICard
-            title="Taxa de Conclusão"
-            value={`${data.taskStats.completionRate}%`}
-            icon={Target}
+            title="Taxa de Engajamento"
+            value={`${data.advancedKPIs.engagementRate}%`}
+            subtitle="Usuários ativos / total"
+            icon={Percent}
             size="sm"
           />
           <KPICard
@@ -137,6 +140,48 @@ export default function GodModePage() {
             value={data.unreadAlerts}
             subtitle={`de ${data.totalAlerts} alertas`}
             icon={TrendingUp}
+            size="sm"
+          />
+        </div>
+
+        {/* Advanced KPIs - Deep Insights */}
+        <div className="grid gap-4 grid-cols-2 lg:grid-cols-5">
+          <KPICard
+            title="Pontuação Total"
+            value={data.advancedKPIs.totalPoints.toLocaleString()}
+            subtitle="Pontos acumulados"
+            icon={Award}
+            size="sm"
+            variant="primary"
+          />
+          <KPICard
+            title="Média por Usuário"
+            value={data.advancedKPIs.avgPointsPerUser.toLocaleString()}
+            subtitle="Pontos médios"
+            icon={BarChart3}
+            size="sm"
+          />
+          <KPICard
+            title="Top Performer"
+            value={data.advancedKPIs.topPerformerPoints.toLocaleString()}
+            subtitle={data.advancedKPIs.topPerformerName}
+            icon={Flame}
+            size="sm"
+            variant="success"
+          />
+          <KPICard
+            title="Tarefas Críticas"
+            value={data.advancedKPIs.criticalTasksCount}
+            subtitle={`${data.advancedKPIs.overdueEstimate} pendentes`}
+            icon={AlertTriangle}
+            size="sm"
+            variant="danger"
+          />
+          <KPICard
+            title="Tarefas por Usuário"
+            value={data.advancedKPIs.tasksPerUser}
+            subtitle="Média de distribuição"
+            icon={Target}
             size="sm"
           />
         </div>
