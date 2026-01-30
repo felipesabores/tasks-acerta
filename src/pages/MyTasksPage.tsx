@@ -2,9 +2,10 @@ import { useState, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DailyTaskCard } from '@/components/tasks/DailyTaskCard';
 import { Leaderboard } from '@/components/leaderboard/Leaderboard';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
+import { KPICard } from '@/components/godmode/KPICard';
+import { PageHeader } from '@/components/ui/page-header';
 import {
   Collapsible,
   CollapsibleContent,
@@ -17,9 +18,8 @@ import {
   CheckCircle2, 
   XCircle,
   Target,
-  Calendar,
+  ClipboardList,
   ChevronDown,
-  ClipboardList
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -70,54 +70,44 @@ export default function MyTasksPage() {
     <AppLayout title="Tarefas Diárias">
       <div className="space-y-6">
         {/* Header with date */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-muted-foreground">
-            <Calendar className="h-5 w-5" />
-            <span className="capitalize">{today}</span>
-          </div>
-        </div>
+        <PageHeader
+          title="Tarefas Diárias"
+          subtitle={`${today.charAt(0).toUpperCase() + today.slice(1)}`}
+          icon={ClipboardList}
+          variant="primary"
+        />
 
-        {/* Stats Cards */}
+        {/* Stats Cards - Premium KPI Style */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Total de Tarefas</CardTitle>
-              <Target className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.total}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Concluídas</CardTitle>
-              <CheckCircle2 className="h-4 w-4 text-primary" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-primary">{stats.completed}</div>
-              {stats.total > 0 && (
-                <Progress value={(stats.completed / stats.total) * 100} className="mt-2" />
-              )}
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Não Concluídas</CardTitle>
-              <XCircle className="h-4 w-4 text-destructive" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-destructive">{stats.notCompleted}</div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
-              <Star className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{stats.pending}</div>
-            </CardContent>
-          </Card>
+          <KPICard
+            title="Total de Tarefas"
+            value={stats.total}
+            icon={Target}
+            variant="default"
+            size="sm"
+          />
+          <KPICard
+            title="Concluídas"
+            value={stats.completed}
+            subtitle={stats.total > 0 ? `${Math.round((stats.completed / stats.total) * 100)}% do total` : undefined}
+            icon={CheckCircle2}
+            variant="success"
+            size="sm"
+          />
+          <KPICard
+            title="Não Concluídas"
+            value={stats.notCompleted}
+            icon={XCircle}
+            variant="danger"
+            size="sm"
+          />
+          <KPICard
+            title="Pendentes"
+            value={stats.pending}
+            icon={Star}
+            variant="warning"
+            size="sm"
+          />
         </div>
 
         {/* Tasks Section */}
@@ -140,10 +130,12 @@ export default function MyTasksPage() {
             </div>
           ) : tasks.length > 0 ? (
             /* All tasks completed for the day */
-            <Card className="border-primary/20 bg-primary/5">
+            <Card className="border-primary/20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
               <CardContent className="pt-6">
                 <div className="text-center py-6">
-                  <CheckCircle2 className="h-16 w-16 text-primary mx-auto mb-4" />
+                  <div className="h-16 w-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+                    <CheckCircle2 className="h-8 w-8 text-primary" />
+                  </div>
                   <h2 className="text-xl font-semibold text-primary mb-2">Dia Concluído!</h2>
                   <p className="text-muted-foreground mb-6">
                     Todas as suas {completedTasks.length} tarefas do dia foram registradas.
