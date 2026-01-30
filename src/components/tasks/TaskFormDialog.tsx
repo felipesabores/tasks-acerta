@@ -28,9 +28,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Task, TaskFormData } from '@/hooks/useTasks';
-import { Plus, X, Building2 } from 'lucide-react';
+import { useTaskTemplates, TaskTemplate } from '@/hooks/useTaskTemplates';
+import { Plus, X, Building2, FileText } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 
 const formSchema = z.object({
   title: z.string().min(1, 'Título é obrigatório').max(100, 'Máximo 100 caracteres'),
@@ -60,10 +62,24 @@ export function TaskFormDialog({
   task,
   users,
 }: TaskFormDialogProps) {
+  const { templates } = useTaskTemplates();
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [checklistItems, setChecklistItems] = useState<string[]>([]);
   const [newChecklistItem, setNewChecklistItem] = useState('');
   const [userSector, setUserSector] = useState<UserSector | null>(null);
   const [loadingSector, setLoadingSector] = useState(false);
+
+  // Handle template selection
+  const handleTemplateSelect = (templateId: string) => {
+    setSelectedTemplateId(templateId);
+    if (templateId && templateId !== 'none') {
+      const template = templates.find(t => t.id === templateId);
+      if (template) {
+        form.setValue('title', template.title);
+        form.setValue('description', template.description);
+      }
+    }
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -121,6 +137,7 @@ export function TaskFormDialog({
         isMandatory: task.is_mandatory || false,
       });
       loadChecklistItems(task.id);
+      setSelectedTemplateId('');
     } else {
       form.reset({
         title: '',
@@ -131,6 +148,7 @@ export function TaskFormDialog({
       });
       setChecklistItems([]);
       setUserSector(null);
+      setSelectedTemplateId('');
     }
   }, [task, form, open]);
 
@@ -193,6 +211,30 @@ export function TaskFormDialog({
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4">
+            {/* Template Selector - only show when creating new task */}
+            {!task && templates.length > 0 && (
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                  <FormLabel className="text-sm">Usar modelo (opcional)</FormLabel>
+                </div>
+                <Select value={selectedTemplateId} onValueChange={handleTemplateSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione um modelo para preencher automaticamente" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="none">Nenhum modelo</SelectItem>
+                    {templates.map(template => (
+                      <SelectItem key={template.id} value={template.id}>
+                        {template.title} ({template.sector?.name || 'Sem setor'})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Separator className="my-4" />
+              </div>
+            )}
+
             <FormField
               control={form.control}
               name="title"
