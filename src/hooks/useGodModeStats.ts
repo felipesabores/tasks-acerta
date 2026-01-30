@@ -59,15 +59,20 @@ export function useGodModeStats(dateRange: DateRange) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Memoize date strings to prevent unnecessary re-fetches
+  const fromDateStr = useMemo(() => format(startOfDay(dateRange.from), 'yyyy-MM-dd'), [dateRange.from.getTime()]);
+  const toDateStr = useMemo(() => format(endOfDay(dateRange.to), 'yyyy-MM-dd'), [dateRange.to.getTime()]);
+
   useEffect(() => {
+    let isMounted = true;
+    
     async function fetchData() {
+      setLoading(true);
+      setError(null);
       setLoading(true);
       setError(null);
 
       try {
-        const fromDate = format(startOfDay(dateRange.from), 'yyyy-MM-dd');
-        const toDate = format(endOfDay(dateRange.to), 'yyyy-MM-dd');
-
         // Fetch all data in parallel
         const [
           tasksResult,
@@ -83,8 +88,8 @@ export function useGodModeStats(dateRange: DateRange) {
           supabase
             .from('daily_task_completions')
             .select('*')
-            .gte('completion_date', fromDate)
-            .lte('completion_date', toDate),
+            .gte('completion_date', fromDateStr)
+            .lte('completion_date', toDateStr),
           supabase
             .from('user_points')
             .select('*, profiles!inner(id, name)'),
@@ -94,8 +99,8 @@ export function useGodModeStats(dateRange: DateRange) {
           supabase
             .from('admin_alerts')
             .select('id, is_read, created_at')
-            .gte('alert_date', fromDate)
-            .lte('alert_date', toDate),
+            .gte('alert_date', fromDateStr)
+            .lte('alert_date', toDateStr),
           supabase
             .from('criticality_points')
             .select('*'),
@@ -169,26 +174,36 @@ export function useGodModeStats(dateRange: DateRange) {
         // Calculate user metrics
         const activeUserIds = new Set(completions.map((c: any) => c.profile_id));
 
-        setData({
-          taskStats,
-          userPerformances: userPerformances.sort((a, b) => b.totalPoints - a.totalPoints),
-          dailyMetrics,
-          criticalityBreakdown,
-          totalUsers: profiles.length,
-          activeUsers: activeUserIds.size,
-          totalAlerts: alerts.length,
-          unreadAlerts: alerts.filter((a: any) => !a.is_read).length,
-        });
+        if (isMounted) {
+          setData({
+            taskStats,
+            userPerformances: userPerformances.sort((a, b) => b.totalPoints - a.totalPoints),
+            dailyMetrics,
+            criticalityBreakdown,
+            totalUsers: profiles.length,
+            activeUsers: activeUserIds.size,
+            totalAlerts: alerts.length,
+            unreadAlerts: alerts.filter((a: any) => !a.is_read).length,
+          });
+        }
       } catch (err: any) {
         console.error('Error fetching god mode stats:', err);
-        setError(err.message);
+        if (isMounted) {
+          setError(err.message);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     fetchData();
-  }, [dateRange.from, dateRange.to]);
+    
+    return () => {
+      isMounted = false;
+    };
+  }, [fromDateStr, toDateStr]);
 
   return { data, loading, error };
 }
