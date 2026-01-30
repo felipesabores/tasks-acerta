@@ -5,6 +5,9 @@ import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -20,10 +23,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
-import { Loader2, Users, Shield, Edit, User, UserPlus } from 'lucide-react';
+import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Save } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
 
@@ -43,6 +54,11 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
+  
+  // Edit user dialog state
+  const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
+  const [editForm, setEditForm] = useState({ name: '', whatsapp: '', cargo: '' });
+  const [saving, setSaving] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     const { data: profiles, error: profilesError } = await supabase
@@ -130,6 +146,47 @@ export default function UsersPage() {
     setUpdatingUserId(null);
   };
 
+  const openEditDialog = (user: UserWithRole) => {
+    setEditingUser(user);
+    setEditForm({
+      name: user.name,
+      whatsapp: user.whatsapp || '',
+      cargo: user.cargo || '',
+    });
+  };
+
+  const handleSaveProfile = async () => {
+    if (!editingUser) return;
+    
+    setSaving(true);
+    
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        name: editForm.name,
+        whatsapp: editForm.whatsapp || null,
+        cargo: editForm.cargo || null,
+      })
+      .eq('id', editingUser.id);
+
+    if (error) {
+      toast({
+        title: 'Erro ao atualizar perfil',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Perfil atualizado',
+        description: 'Os dados do usuário foram atualizados com sucesso.',
+      });
+      setEditingUser(null);
+      fetchUsers();
+    }
+    
+    setSaving(false);
+  };
+
   const getRoleBadge = (role: AppRole) => {
     switch (role) {
       case 'admin':
@@ -211,8 +268,9 @@ export default function UsersPage() {
                           <TableHead>Usuário</TableHead>
                           <TableHead>Cargo</TableHead>
                           <TableHead>WhatsApp</TableHead>
-                          <TableHead>Papel Atual</TableHead>
+                          <TableHead>Papel</TableHead>
                           <TableHead>Alterar Papel</TableHead>
+                          <TableHead className="w-[80px]">Editar</TableHead>
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -275,6 +333,16 @@ export default function UsersPage() {
                                     <SelectItem value="admin">Administrador</SelectItem>
                                   </SelectContent>
                                 </Select>
+                              </TableCell>
+                              <TableCell>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => openEditDialog(user)}
+                                  className="h-8 w-8"
+                                >
+                                  <Pencil className="h-4 w-4" />
+                                </Button>
                               </TableCell>
                             </TableRow>
                           );
@@ -350,6 +418,63 @@ export default function UsersPage() {
           </TabsContent>
 
         </Tabs>
+
+        {/* Edit User Dialog */}
+        <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Pencil className="h-5 w-5" />
+                Editar Usuário
+              </DialogTitle>
+              <DialogDescription>
+                Atualize os dados do usuário. O email não pode ser alterado.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="grid gap-4 py-4">
+              <div className="grid gap-2">
+                <Label htmlFor="name">Nome Completo</Label>
+                <Input
+                  id="name"
+                  value={editForm.name}
+                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                  placeholder="Nome do usuário"
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="cargo">Cargo</Label>
+                <Input
+                  id="cargo"
+                  value={editForm.cargo}
+                  onChange={(e) => setEditForm({ ...editForm, cargo: e.target.value })}
+                  placeholder="Ex: Analista, Gerente..."
+                />
+              </div>
+              <div className="grid gap-2">
+                <Label htmlFor="whatsapp">WhatsApp</Label>
+                <Input
+                  id="whatsapp"
+                  value={editForm.whatsapp}
+                  onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
+                  placeholder="(00) 00000-0000"
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setEditingUser(null)}>
+                Cancelar
+              </Button>
+              <Button onClick={handleSaveProfile} disabled={saving || !editForm.name.trim()}>
+                {saving ? (
+                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Salvar
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
