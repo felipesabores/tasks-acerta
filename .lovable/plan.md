@@ -1,286 +1,461 @@
 
-# Plano: Cadastro de Modelos de Tarefas por Setor
+# Plano: Sistema Completo de Empresas com Setores e Cargos
 
 ## Resumo Executivo
 
-Esta feature cria um sistema de **modelos de tarefas pré-cadastradas** que serão utilizados para preencher automaticamente o formulário de criação de tarefas. Ao selecionar um modelo no dropdown, os campos título, descrição e setor serão preenchidos automaticamente, agilizando o processo de criação de tarefas recorrentes.
+Este plano implementa uma reestruturacao completa onde **empresas sao a entidade central** que agrega tanto **setores** quanto **cargos**. Ao cadastrar uma empresa, o usuario podera adicionar os setores e cargos disponiveis naquela empresa. No cadastro de usuarios, ao selecionar a empresa, os dropdowns de setor e cargo serao filtrados automaticamente.
 
 ---
 
-## Escopo da Feature
+## 1. Nova Arquitetura de Dados
 
-### O que será criado
-- Nova tabela `task_templates` no banco de dados
-- Nova aba "Modelos de Tarefas" na página de gerenciamento (TasksPage)
-- Componente de CRUD para cadastrar, editar e excluir modelos
-- Dropdown no formulário de criação de tarefas para selecionar um modelo
+### Relacionamentos
 
-### Campos do Modelo de Tarefa
-| Campo | Tipo | Obrigatório | Descrição |
+```text
++------------------+
+|     EMPRESA      |
++------------------+
+        |
+        +-------> SETORES (pertencentes a empresa)
+        |
+        +-------> CARGOS (pertencentes a empresa)
+
++------------------+
+|     USUARIO      |
++------------------+
+        |
+        +-------> empresa_id
+        +-------> position_id (cargo da empresa)
+        +-------> setor (via profile_sectors, agora company_sectors)
+```
+
+### Impacto na Tabela Existente `sectors`
+
+A tabela `sectors` atual e **global** (sem vinculo com empresa). Temos duas opcoes:
+
+**Opcao Escolhida**: Adicionar `company_id` na tabela `sectors` existente, tornando setores vinculados a empresas.
+
+---
+
+## 2. Estrutura de Banco de Dados
+
+### Nova Tabela: `companies`
+
+| Campo | Tipo | Obrigatorio | Descricao |
 |-------|------|-------------|-----------|
-| `id` | UUID | Sim | Identificador único |
-| `title` | TEXT | Sim | Título do modelo |
-| `description` | TEXT | Sim | Descrição padrão da tarefa |
-| `sector_id` | UUID | Sim | Setor ao qual o modelo pertence |
-| `created_by` | UUID | Sim | Usuário que criou o modelo |
-| `created_at` | TIMESTAMP | Sim | Data de criação |
-| `updated_at` | TIMESTAMP | Sim | Data de atualização |
+| `id` | UUID | Sim | Identificador unico |
+| `name` | TEXT | Sim | Nome da empresa (unico) |
+| `created_at` | TIMESTAMPTZ | Sim | Data de criacao |
+| `updated_at` | TIMESTAMPTZ | Sim | Data de atualizacao |
+
+### Nova Tabela: `company_positions` (Cargos por Empresa)
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `id` | UUID | Sim | Identificador unico |
+| `company_id` | UUID | Sim | Referencia para empresa |
+| `name` | TEXT | Sim | Nome do cargo |
+| `created_at` | TIMESTAMPTZ | Sim | Data de criacao |
+
+### Alteracao na Tabela `sectors`
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `company_id` | UUID | Sim | Referencia para empresa |
+
+### Alteracoes na Tabela `profiles`
+
+| Campo | Tipo | Obrigatorio | Descricao |
+|-------|------|-------------|-----------|
+| `username` | TEXT | Sim | Username unico para login |
+| `company_id` | UUID | Nao | Referencia para empresa |
+| `position_id` | UUID | Nao | Referencia para cargo |
+| `is_active` | BOOLEAN | Sim | Status do usuario |
 
 ---
 
-## Arquitetura da Solução
-
-### 1. Migração de Banco de Dados
-
-Criar tabela `task_templates` com os seguintes campos:
+## 3. Migracao SQL
 
 ```sql
-CREATE TABLE public.task_templates (
+-- 1. Tabela de empresas
+CREATE TABLE public.companies (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  title TEXT NOT NULL,
-  description TEXT NOT NULL,
-  sector_id UUID NOT NULL REFERENCES public.sectors(id) ON DELETE CASCADE,
-  created_by UUID NOT NULL,
+  name TEXT NOT NULL UNIQUE,
   created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
   updated_at TIMESTAMPTZ DEFAULT now() NOT NULL
 );
 
--- RLS Policies
-ALTER TABLE public.task_templates ENABLE ROW LEVEL SECURITY;
+-- 2. Tabela de cargos por empresa
+CREATE TABLE public.company_positions (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  company_id UUID NOT NULL REFERENCES public.companies(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now() NOT NULL,
+  UNIQUE(company_id, name)
+);
 
--- Qualquer usuário autenticado pode visualizar templates
-CREATE POLICY "Authenticated users can view task templates"
-  ON public.task_templates FOR SELECT
-  USING (true);
+-- 3. Adicionar company_id na tabela sectors
+ALTER TABLE public.sectors 
+ADD COLUMN company_id UUID REFERENCES public.companies(id) ON DELETE CASCADE;
 
--- Admins e task_editors podem gerenciar templates
-CREATE POLICY "Admins and task_editors can manage templates"
-  ON public.task_templates FOR ALL
-  USING (
-    has_role(auth.uid(), 'admin'::app_role) OR 
-    has_role(auth.uid(), 'task_editor'::app_role)
-  )
-  WITH CHECK (
-    has_role(auth.uid(), 'admin'::app_role) OR 
-    has_role(auth.uid(), 'task_editor'::app_role)
-  );
+-- 4. Adicionar campos ao profiles
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS username TEXT UNIQUE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS company_id UUID REFERENCES public.companies(id);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS position_id UUID REFERENCES public.company_positions(id);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_active BOOLEAN DEFAULT true NOT NULL;
 
--- Gestores de setor podem gerenciar templates do seu setor
-CREATE POLICY "Sector managers can manage their sector templates"
-  ON public.task_templates FOR ALL
-  USING (
-    has_role(auth.uid(), 'gestor_setor'::app_role) AND 
-    sector_id IN (SELECT get_user_sector_ids(auth.uid()))
-  )
-  WITH CHECK (
-    has_role(auth.uid(), 'gestor_setor'::app_role) AND 
-    sector_id IN (SELECT get_user_sector_ids(auth.uid()))
-  );
+-- 5. Trigger para updated_at em companies
+CREATE TRIGGER update_companies_updated_at
+  BEFORE UPDATE ON public.companies
+  FOR EACH ROW
+  EXECUTE FUNCTION update_updated_at_column();
+
+-- 6. RLS para companies
+ALTER TABLE public.companies ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view companies"
+  ON public.companies FOR SELECT USING (true);
+
+CREATE POLICY "God mode can manage companies"
+  ON public.companies FOR ALL
+  USING (has_role(auth.uid(), 'god_mode'::app_role))
+  WITH CHECK (has_role(auth.uid(), 'god_mode'::app_role));
+
+-- 7. RLS para company_positions
+ALTER TABLE public.company_positions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Anyone can view positions"
+  ON public.company_positions FOR SELECT USING (true);
+
+CREATE POLICY "God mode can manage positions"
+  ON public.company_positions FOR ALL
+  USING (has_role(auth.uid(), 'god_mode'::app_role))
+  WITH CHECK (has_role(auth.uid(), 'god_mode'::app_role));
+
+-- 8. Funcao para buscar email pelo username
+CREATE OR REPLACE FUNCTION public.get_email_by_username(_username TEXT)
+RETURNS TEXT
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT u.email
+  FROM auth.users u
+  JOIN public.profiles p ON p.user_id = u.id
+  WHERE LOWER(p.username) = LOWER(_username)
+  AND p.is_active = true
+  LIMIT 1
+$$;
 ```
 
 ---
 
-### 2. Hook para Gerenciamento de Templates
+## 4. Interface de Cadastro de Empresas
 
-Criar novo hook `useTaskTemplates.ts`:
+### Tela Principal
+
+```text
++----------------------------------------------------------+
+| Empresas                                      [+ Nova]   |
++----------------------------------------------------------+
+| Nome           | Setores          | Cargos      | Acoes  |
+|----------------|------------------|-------------|--------|
+| Empresa ABC    | TI, Comercial,   | Diretor,    | [E][X] |
+|                | Financeiro       | Analista    |        |
+| Empresa XYZ    | Vendas, Suporte  | Gerente,    | [E][X] |
+|                |                  | Atendente   |        |
++----------------------------------------------------------+
+```
+
+### Dialog de Criacao/Edicao de Empresa
+
+```text
++----------------------------------------------------------+
+| Nova Empresa                                             |
++----------------------------------------------------------+
+| Nome da Empresa *                                        |
+| [________________________________________]               |
+|                                                          |
+| +-------------------------------------------------+     |
+| | SETORES                            [+ Adicionar] |     |
+| +-------------------------------------------------+     |
+| | Comercial                                   [X] |     |
+| | Financeiro                                  [X] |     |
+| | TI                                          [X] |     |
+| +-------------------------------------------------+     |
+|                                                          |
+| +-------------------------------------------------+     |
+| | CARGOS                             [+ Adicionar] |     |
+| +-------------------------------------------------+     |
+| | Diretor                                     [X] |     |
+| | Gerente                                     [X] |     |
+| | Analista                                    [X] |     |
+| | Assistente                                  [X] |     |
+| +-------------------------------------------------+     |
+|                                                          |
+| [Cancelar]                              [Salvar Empresa] |
++----------------------------------------------------------+
+```
+
+---
+
+## 5. Novo Formulario de Cadastro de Usuario
+
+### Campos
+
+| Campo | Tipo | Obrigatorio | Comportamento |
+|-------|------|-------------|---------------|
+| Username | Input | Sim | Unico, 3-50 caracteres |
+| Senha | Input | Sim | Minimo 6 caracteres |
+| Funcao (role) | Dropdown | Sim | Todas as roles do sistema |
+| Empresa | Dropdown | Sim | Lista de empresas |
+| Setor | Dropdown | Sim | Filtra pela empresa selecionada |
+| Cargo | Dropdown | Sim | Filtra pela empresa selecionada |
+| Esta ativo? | Checkbox | Sim | Default: marcado |
+
+### Interface Visual
+
+```text
++----------------------------------------------------------+
+| Cadastrar Novo Usuario                                   |
++----------------------------------------------------------+
+| Username *                                               |
+| [________________________]                               |
+| Apenas letras, numeros e underscore                      |
+|                                                          |
+| Senha *                                                  |
+| [________________________]                               |
+|                                                          |
+| Funcao no Sistema *                                      |
+| [Selecione uma funcao                               v]   |
+|                                                          |
+| Empresa *                                                |
+| [Selecione uma empresa                              v]   |
+|                                                          |
+| Setor *  (carrega ao selecionar empresa)                |
+| [Selecione um setor                                 v]   |
+|                                                          |
+| Cargo *  (carrega ao selecionar empresa)                |
+| [Selecione um cargo                                 v]   |
+|                                                          |
+| [x] Usuario ativo                                        |
+|                                                          |
+| [            Cadastrar Usuario            ]              |
++----------------------------------------------------------+
+```
+
+### Comportamento dos Dropdowns
+
+1. **Empresa** -> Ao selecionar, carrega Setores e Cargos daquela empresa
+2. **Setor** -> Desabilitado ate selecionar empresa
+3. **Cargo** -> Desabilitado ate selecionar empresa
+4. Se trocar de empresa -> Limpa setor e cargo selecionados
+
+---
+
+## 6. Sistema de Login por Username
+
+### Tela de Login Atualizada
+
+```text
++------------------------------------------+
+|             AcertaMais                   |
+|   Gerencie suas tarefas de forma simples |
++------------------------------------------+
+| Usuario                                  |
+| [________________________]               |
+|                                          |
+| Senha                                    |
+| [________________________]               |
+|                                          |
+| [           Entrar           ]           |
++------------------------------------------+
+```
+
+### Fluxo de Autenticacao
+
+```text
+Usuario digita: username + senha
+         |
+         v
+Sistema chama funcao get_email_by_username
+         |
+         v
+Se encontrado E is_active = true:
+  - Autentica via Supabase Auth
+  - Redireciona para home
+         |
+Se nao encontrado OU is_active = false:
+  - Exibe erro: "Usuario nao encontrado ou inativo"
+```
+
+---
+
+## 7. Arquivos a Criar/Modificar
+
+| Arquivo | Acao | Descricao |
+|---------|------|-----------|
+| `supabase/migrations/xxx_companies_system.sql` | Criar | Migracao completa |
+| `src/hooks/useCompanies.ts` | Criar | Hook para empresas, setores e cargos |
+| `src/components/companies/CompanyManagement.tsx` | Criar | CRUD de empresas com setores e cargos |
+| `src/components/users/UserRegistrationForm.tsx` | Reescrever | Novo formulario com todos os campos |
+| `src/pages/AuthPage.tsx` | Modificar | Login por username |
+| `src/contexts/AuthContext.tsx` | Modificar | Logica de autenticacao por username |
+| `src/pages/UsersPage.tsx` | Modificar | Nova aba "Empresas" (substituir "Setores") |
+| `src/components/ProtectedRoute.tsx` | Modificar | Verificar is_active |
+| `src/hooks/useSectors.ts` | Modificar | Adicionar filtro por company_id |
+| `src/components/sectors/SectorManagement.tsx` | Remover/Integrar | Setores agora no cadastro de empresas |
+
+---
+
+## 8. Hook useCompanies
 
 ```typescript
-// src/hooks/useTaskTemplates.ts
-interface TaskTemplate {
+interface Company {
   id: string;
-  title: string;
-  description: string;
-  sector_id: string;
-  sector?: { id: string; name: string };
-  created_by: string;
-  created_at: string;
-  updated_at: string;
+  name: string;
+  sectors?: Sector[];
+  positions?: CompanyPosition[];
 }
 
-interface TaskTemplateFormData {
-  title: string;
-  description: string;
-  sectorId: string;
+interface Sector {
+  id: string;
+  company_id: string;
+  name: string;
+  description: string | null;
 }
-```
 
-Funções:
-- `fetchTemplates()` - Lista todos os templates (com join no setor)
-- `fetchTemplatesBySector(sectorId)` - Lista templates de um setor específico
-- `addTemplate(data)` - Cria novo template
-- `updateTemplate(id, data)` - Atualiza template existente
-- `deleteTemplate(id)` - Remove template
+interface CompanyPosition {
+  id: string;
+  company_id: string;
+  name: string;
+}
+
+// Funcoes do hook:
+// - fetchCompanies() - Lista empresas com setores e cargos
+// - addCompany(name, sectors[], positions[]) - Cria empresa completa
+// - updateCompany(id, name, sectors[], positions[]) - Atualiza empresa
+// - deleteCompany(id) - Remove empresa
+// - fetchSectorsByCompany(companyId) - Lista setores de uma empresa
+// - fetchPositionsByCompany(companyId) - Lista cargos de uma empresa
+```
 
 ---
 
-### 3. Componente de Gerenciamento de Templates
-
-Criar componente `TaskTemplateManagement.tsx`:
+## 9. Fluxo de Criacao de Usuario
 
 ```text
-+------------------------------------------------+
-|  Modelos de Tarefas                            |
-|  [+ Novo Modelo]                               |
-+------------------------------------------------+
-|  Buscar: [______________] Setor: [Dropdown ▼] |
-+------------------------------------------------+
-| Título       | Descrição      | Setor   | Ações|
-|--------------|----------------|---------|------|
-| Limpeza sala | Limpar sala... | TI      | ✏️ 🗑️|
-| Backup       | Fazer backup...| TI      | ✏️ 🗑️|
-| Atendimento  | Atender...     | Vendas  | ✏️ 🗑️|
-+------------------------------------------------+
-```
-
-**Dialog de Criação/Edição:**
-- Campo Título (obrigatório)
-- Campo Descrição (obrigatório)
-- Seletor de Setor (obrigatório)
-
----
-
-### 4. Integração com TaskFormDialog
-
-Adicionar dropdown no início do formulário de criação de tarefas:
-
-```text
-+------------------------------------------------+
-| Nova Tarefa                                    |
-+------------------------------------------------+
-| Usar modelo: [Selecione um modelo ▼]          |
-|   - Limpeza sala de reunião                   |
-|   - Backup diário                              |
-|   - Atendimento ao cliente                     |
-+------------------------------------------------+
-| Título: [____________________________]         |
-| Descrição: [_________________________]         |
-| Responsável: [Dropdown ▼]                      |
-| Setor: [Preenchido automaticamente]           |
-| ...                                            |
-+------------------------------------------------+
-```
-
-**Comportamento:**
-1. Quando um modelo é selecionado, os campos são auto-preenchidos:
-   - Título
-   - Descrição
-   - Setor (exibido como Badge, não editável se veio do modelo)
-2. O usuário pode modificar os valores se necessário
-3. O responsável ainda precisa ser selecionado manualmente
-
----
-
-## Arquivos a Criar/Modificar
-
-| Arquivo | Ação | Descrição |
-|---------|------|-----------|
-| `supabase/migrations/xxx_task_templates.sql` | Criar | Migração da tabela |
-| `src/hooks/useTaskTemplates.ts` | Criar | Hook de gerenciamento |
-| `src/components/tasks/TaskTemplateManagement.tsx` | Criar | Componente de CRUD |
-| `src/components/tasks/TaskFormDialog.tsx` | Modificar | Adicionar dropdown de modelos |
-| `src/pages/TasksPage.tsx` | Modificar | Adicionar aba de modelos |
-
----
-
-## Fluxo de Uso
-
-### Fluxo 1: Cadastrar Modelo de Tarefa
-
-```text
-Admin/Gestor acessa "Gerenciar Tarefas"
+God Mode acessa "Gerenciar Usuarios"
          |
          v
-Clica na aba "Modelos"
+Clica na aba "Cadastrar"
          |
          v
-Clica em "+ Novo Modelo"
+Preenche: username, senha, funcao
          |
          v
-Preenche: Título, Descrição, Setor
+Seleciona empresa
+   -> Sistema carrega setores e cargos da empresa
          |
          v
-Clica em "Salvar"
+Seleciona setor e cargo
          |
          v
-Modelo disponível no dropdown
-```
-
-### Fluxo 2: Criar Tarefa usando Modelo
-
-```text
-Usuário clica em "Nova Tarefa"
+Define se esta ativo
          |
          v
-Seleciona modelo no dropdown
+Clica em "Cadastrar"
          |
          v
-Campos preenchidos automaticamente
+Sistema cria usuario no Auth com email interno:
+{username}@internal.acertamais.app
          |
          v
-Seleciona Responsável
+Atualiza profile com:
+- username, company_id, position_id, is_active
          |
          v
-Ajusta Criticidade (se necessário)
+Vincula usuario ao setor (profile_sectors)
          |
          v
-Clica em "Criar Tarefa"
+Define role na tabela user_roles
+         |
+         v
+Usuario pode fazer login com username
 ```
 
 ---
 
-## Validações
+## 10. Impacto nas Funcionalidades Existentes
 
-- **Título**: Obrigatório, máximo 100 caracteres
-- **Descrição**: Obrigatório, máximo 500 caracteres
-- **Setor**: Obrigatório, deve existir na tabela `sectors`
+### Tarefas por Setor
+
+As tarefas ja usam `sector_id`. Como setores agora tem `company_id`, a filtragem de tarefas por setor continua funcionando. Apenas a gestao de setores muda (agora via cadastro de empresas).
+
+### Funcoes de Banco de Dados
+
+As funcoes `get_user_sector_ids` e `is_sector_manager` continuam funcionando, pois o setor ainda e a mesma tabela, apenas com o campo `company_id` adicional.
+
+### Templates de Tarefas
+
+A tabela `task_templates` usa `sector_id`, que continua existindo. Funciona normalmente.
 
 ---
 
-## Permissões
+## 11. Permissoes
+
+### Empresas, Setores e Cargos
 
 | Role | Visualizar | Criar | Editar | Excluir |
 |------|------------|-------|--------|---------|
 | user | - | - | - | - |
-| gestor_setor | Seu setor | Seu setor | Seu setor | Seu setor |
-| gestor_geral | Todos | - | - | - |
-| task_editor | Todos | Todos | Todos | - |
-| admin | Todos | Todos | Todos | Todos |
-| god_mode | Todos | Todos | Todos | Todos |
+| gestor_setor | - | - | - | - |
+| gestor_geral | - | - | - | - |
+| task_editor | - | - | - | - |
+| admin | Sim | - | - | - |
+| god_mode | Sim | Sim | Sim | Sim |
+
+### Cadastro de Usuarios
+
+Apenas `god_mode` pode cadastrar novos usuarios.
 
 ---
 
-## Interface Visual
-
-### Aba de Modelos na TasksPage
-
-A página de tarefas terá uma nova estrutura com abas:
+## 12. Abas na Pagina de Usuarios (Novo Layout)
 
 ```text
-+----------------------------------------------------+
-| Gerenciar Tarefas                                  |
-+----------------------------------------------------+
-| [Tarefas] [Modelos]                               |
-+----------------------------------------------------+
++------------------------------------------------------------+
+| Gerenciar Usuarios                                         |
++------------------------------------------------------------+
+| [Usuarios] [Empresas] [Cadastrar]                         |
++------------------------------------------------------------+
 ```
 
-### Card do Template
-
-```text
-+------------------------------------------+
-| 📋 Limpeza da sala de reunião           |
-|------------------------------------------|
-| Limpar e organizar a sala de reunião    |
-| após cada uso, incluindo...             |
-|------------------------------------------|
-| 🏢 Setor: Administração  [✏️] [🗑️]     |
-+------------------------------------------+
-```
+A aba "Setores" e removida, pois setores agora sao gerenciados dentro do cadastro de cada empresa.
 
 ---
 
-## Resultado Esperado
+## 13. Validacoes
 
-1. **Padronização**: Tarefas recorrentes terão sempre a mesma estrutura
-2. **Agilidade**: Criação de tarefas com poucos cliques
-3. **Organização por setor**: Cada setor tem seus próprios modelos
-4. **Flexibilidade**: Modelos podem ser editados conforme necessário
+### Username
+- 3-50 caracteres
+- Apenas letras, numeros e underscore
+- Unico no sistema
+
+### Senha
+- Minimo 6 caracteres
+
+### Empresa/Setor/Cargo
+- Todos obrigatorios no cadastro
+
+---
+
+## 14. Resultado Esperado
+
+1. **Empresas centralizadas** - Cada empresa tem seus setores e cargos
+2. **Login por username** - Mais simples que email
+3. **Dropdowns dinamicos** - Setor e cargo filtram pela empresa
+4. **Controle de acesso** - Usuarios inativos bloqueados automaticamente
+5. **Cadastro centralizado** - Apenas god_mode cria usuarios
+6. **Integracao mantida** - Tarefas continuam funcionando com sector_id
