@@ -12,6 +12,8 @@ import MyTasksPage from "./pages/MyTasksPage";
 import LeaderboardPage from "./pages/LeaderboardPage";
 import UsersPage from "./pages/UsersPage";
 import GodModePage from "./pages/GodModePage";
+import SectorTasksPage from "./pages/SectorTasksPage";
+import AllTasksViewPage from "./pages/AllTasksViewPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -72,6 +74,22 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <GodModePage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/sector-tasks"
+                element={
+                  <ProtectedRoute>
+                    <SectorTasksPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/all-tasks-view"
+                element={
+                  <ProtectedRoute>
+                    <AllTasksViewPage />
                   </ProtectedRoute>
                 }
               />

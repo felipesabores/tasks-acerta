@@ -213,10 +213,16 @@ export default function UsersPage() {
 
   const getRoleBadge = (role: AppRole) => {
     switch (role) {
+      case 'god_mode':
+        return <Badge className="bg-purple-600 text-white">God Mode</Badge>;
       case 'admin':
         return <Badge className="bg-primary">Administrador</Badge>;
       case 'task_editor':
         return <Badge variant="secondary">Editor de Tarefas</Badge>;
+      case 'gestor_setor':
+        return <Badge className="bg-teal-600 text-white">Gestor de Setor</Badge>;
+      case 'gestor_geral':
+        return <Badge className="bg-indigo-600 text-white">Gestor Geral</Badge>;
       default:
         return <Badge variant="outline">Usuário</Badge>;
     }
@@ -224,10 +230,16 @@ export default function UsersPage() {
 
   const getRoleIcon = (role: AppRole) => {
     switch (role) {
+      case 'god_mode':
+        return <Shield className="h-4 w-4 text-purple-600" />;
       case 'admin':
         return <Shield className="h-4 w-4" />;
       case 'task_editor':
         return <Edit className="h-4 w-4" />;
+      case 'gestor_setor':
+        return <Users className="h-4 w-4 text-teal-600" />;
+      case 'gestor_geral':
+        return <Users className="h-4 w-4 text-indigo-600" />;
       default:
         return <User className="h-4 w-4" />;
     }
@@ -353,8 +365,13 @@ export default function UsersPage() {
                                   </SelectTrigger>
                                   <SelectContent>
                                     <SelectItem value="user">Usuário</SelectItem>
+                                    <SelectItem value="gestor_setor">Gestor de Setor</SelectItem>
+                                    <SelectItem value="gestor_geral">Gestor Geral</SelectItem>
                                     <SelectItem value="task_editor">Editor de Tarefas</SelectItem>
                                     <SelectItem value="admin">Administrador</SelectItem>
+                                    {isGodMode && (
+                                      <SelectItem value="god_mode">God Mode</SelectItem>
+                                    )}
                                   </SelectContent>
                                 </Select>
                               </TableCell>

@@ -134,6 +134,42 @@ export type Database = {
           },
         ]
       }
+      profile_sectors: {
+        Row: {
+          created_at: string
+          id: string
+          profile_id: string
+          sector_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          profile_id: string
+          sector_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          profile_id?: string
+          sector_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "profile_sectors_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profile_sectors_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -164,6 +200,30 @@ export type Database = {
           updated_at?: string
           user_id?: string
           whatsapp?: string | null
+        }
+        Relationships: []
+      }
+      sectors: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
         }
         Relationships: []
       }
@@ -222,6 +282,7 @@ export type Database = {
           id: string
           is_mandatory: boolean | null
           points: number | null
+          sector_id: string | null
           status: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at: string
@@ -236,6 +297,7 @@ export type Database = {
           id?: string
           is_mandatory?: boolean | null
           points?: number | null
+          sector_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title: string
           updated_at?: string
@@ -250,6 +312,7 @@ export type Database = {
           id?: string
           is_mandatory?: boolean | null
           points?: number | null
+          sector_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
           title?: string
           updated_at?: string
@@ -260,6 +323,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_sector_id_fkey"
+            columns: ["sector_id"]
+            isOneToOne: false
+            referencedRelation: "sectors"
             referencedColumns: ["id"]
           },
         ]
@@ -332,6 +402,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_user_sector_ids: { Args: { _user_id: string }; Returns: string[] }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -339,9 +410,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_sector_manager: {
+        Args: { _sector_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
-      app_role: "admin" | "task_editor" | "user" | "god_mode"
+      app_role:
+        | "admin"
+        | "task_editor"
+        | "user"
+        | "god_mode"
+        | "gestor_setor"
+        | "gestor_geral"
       daily_completion_status: "completed" | "not_completed" | "no_demand"
       task_status: "pending" | "in_progress" | "done"
     }
@@ -471,7 +552,14 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      app_role: ["admin", "task_editor", "user", "god_mode"],
+      app_role: [
+        "admin",
+        "task_editor",
+        "user",
+        "god_mode",
+        "gestor_setor",
+        "gestor_geral",
+      ],
       daily_completion_status: ["completed", "not_completed", "no_demand"],
       task_status: ["pending", "in_progress", "done"],
     },
