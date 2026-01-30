@@ -44,6 +44,14 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Phone mask function (Brazilian format)
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  };
+
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
@@ -148,7 +156,12 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
             <FormItem>
               <FormLabel>WhatsApp *</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: (11) 99999-9999" {...field} />
+                <Input 
+                  placeholder="(00) 00000-0000" 
+                  value={field.value}
+                  onChange={(e) => field.onChange(formatPhone(e.target.value))}
+                  maxLength={16}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>

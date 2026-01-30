@@ -60,6 +60,14 @@ export default function UsersPage() {
   const [editForm, setEditForm] = useState({ name: '', whatsapp: '', cargo: '' });
   const [saving, setSaving] = useState(false);
 
+  // Phone mask function (Brazilian format)
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '').slice(0, 11);
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+  };
+
   const fetchUsers = useCallback(async () => {
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
@@ -455,8 +463,9 @@ export default function UsersPage() {
                 <Input
                   id="whatsapp"
                   value={editForm.whatsapp}
-                  onChange={(e) => setEditForm({ ...editForm, whatsapp: e.target.value })}
+                  onChange={(e) => setEditForm({ ...editForm, whatsapp: formatPhone(e.target.value) })}
                   placeholder="(00) 00000-0000"
+                  maxLength={16}
                 />
               </div>
             </div>
