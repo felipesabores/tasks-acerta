@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { DailyTaskCard } from '@/components/tasks/DailyTaskCard';
 import { Leaderboard } from '@/components/leaderboard/Leaderboard';
+import { PendencyWarning } from '@/components/tasks/PendencyWarning';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KPICard } from '@/components/godmode/KPICard';
@@ -25,7 +26,17 @@ import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 
 export default function MyTasksPage() {
-  const { tasks, completions, loading, submitDayCompletion, getTaskCompletion, stats, refetch } = useDailyTasks();
+  const { 
+    tasks, 
+    completions, 
+    loading, 
+    submitDayCompletion, 
+    getTaskCompletion, 
+    stats, 
+    refetch,
+    hasPendingDays,
+    pendingFromPreviousDays 
+  } = useDailyTasks();
   const [selectedStatuses, setSelectedStatuses] = useState<Record<string, CompletionStatus>>({});
 
   const handleStatusChange = (taskId: string, status: CompletionStatus) => {
@@ -46,6 +57,22 @@ export default function MyTasksPage() {
     }
   }, [submitDayCompletion]);
 
+  const handleFinalizePendingTasks = useCallback(async (
+    taskCompletions: { taskId: string; status: CompletionStatus; date: string }[]
+  ) => {
+    // Group by date and submit each group
+    const groupedByDate = taskCompletions.reduce((acc, curr) => {
+      if (!acc[curr.date]) acc[curr.date] = [];
+      acc[curr.date].push({ taskId: curr.taskId, status: curr.status });
+      return acc;
+    }, {} as Record<string, { taskId: string; status: CompletionStatus }[]>);
+
+    for (const [date, tasks] of Object.entries(groupedByDate)) {
+      await submitDayCompletion(tasks, date);
+    }
+    return true;
+  }, [submitDayCompletion]);
+
   const pendingTasks = useMemo(() => {
     return tasks.filter(task => !getTaskCompletion(task.id));
   }, [tasks, getTaskCompletion]);
@@ -61,6 +88,29 @@ export default function MyTasksPage() {
       <AppLayout title="Tarefas Diárias">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // If user has pending days, show the warning and block the task panel
+  if (hasPendingDays && pendingFromPreviousDays.length > 0) {
+    return (
+      <AppLayout title="Tarefas Diárias">
+        <div className="space-y-6">
+          <PageHeader
+            title="Tarefas Diárias"
+            subtitle={`${today.charAt(0).toUpperCase() + today.slice(1)}`}
+            icon={ClipboardList}
+            variant="primary"
+          />
+          
+          <PendencyWarning 
+            pendingTasks={pendingFromPreviousDays}
+            onFinalizeTasks={handleFinalizePendingTasks}
+          />
+          
+          <Leaderboard />
         </div>
       </AppLayout>
     );

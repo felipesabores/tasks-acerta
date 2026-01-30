@@ -15,6 +15,7 @@ export interface LeaderboardEntry {
     avatar_url: string | null;
   };
   rank: number;
+  isPending: boolean;
 }
 
 export function useLeaderboard() {
@@ -24,6 +25,7 @@ export function useLeaderboard() {
   const [currentUserRank, setCurrentUserRank] = useState<LeaderboardEntry | null>(null);
 
   const fetchLeaderboard = useCallback(async () => {
+    // First get all user points
     const { data, error } = await supabase
       .from('user_points')
       .select(`
@@ -37,10 +39,37 @@ export function useLeaderboard() {
       return;
     }
 
-    const rankedData = (data || []).map((entry, index) => ({
+    // Check pending status for each user
+    const entriesWithPendingStatus = await Promise.all(
+      (data || []).map(async (entry) => {
+        const { data: hasPending } = await supabase
+          .rpc('has_pending_tasks', { p_profile_id: entry.profile_id });
+
+        return {
+          ...entry,
+          isPending: hasPending || false,
+        };
+      })
+    );
+
+    // Filter out pending users from ranking and assign ranks
+    const activeUsers = entriesWithPendingStatus.filter(e => !e.isPending);
+    const pendingUsers = entriesWithPendingStatus.filter(e => e.isPending);
+
+    // Assign ranks only to active users
+    const rankedActive = activeUsers.map((entry, index) => ({
       ...entry,
       rank: index + 1,
-    })) as LeaderboardEntry[];
+    }));
+
+    // Pending users get rank 0 (unranked)
+    const rankedPending = pendingUsers.map(entry => ({
+      ...entry,
+      rank: 0,
+    }));
+
+    // Combine: active users first (ranked), then pending users (unranked)
+    const rankedData = [...rankedActive, ...rankedPending] as LeaderboardEntry[];
 
     setLeaderboard(rankedData);
 
@@ -86,6 +115,7 @@ export function useLeaderboard() {
   }, [fetchLeaderboard]);
 
   const getMedalColor = (rank: number): string | null => {
+    if (rank === 0) return null; // Pending users don't get medals
     switch (rank) {
       case 1:
         return 'gold';
