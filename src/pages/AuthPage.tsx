@@ -13,8 +13,8 @@ import { Loader2 } from 'lucide-react';
 import { Logo } from '@/components/ui/logo';
 
 const loginSchema = z.object({
-  email: z.string().email('Email inválido'),
-  password: z.string().min(6, 'Mínimo 6 caracteres'),
+  username: z.string().min(1, 'Usuário é obrigatório'),
+  password: z.string().min(1, 'Senha é obrigatória'),
 });
 
 export default function AuthPage() {
@@ -24,7 +24,7 @@ export default function AuthPage() {
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
-    defaultValues: { email: '', password: '' },
+    defaultValues: { username: '', password: '' },
   });
 
   if (loading) {
@@ -41,7 +41,7 @@ export default function AuthPage() {
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsSubmitting(true);
-    const { error } = await signIn(values.email, values.password);
+    const { error } = await signIn(values.username, values.password);
     setIsSubmitting(false);
 
     if (error) {
@@ -68,12 +68,12 @@ export default function AuthPage() {
             <form onSubmit={loginForm.handleSubmit(handleLogin)} className="space-y-4">
               <FormField
                 control={loginForm.control}
-                name="email"
+                name="username"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Email</FormLabel>
+                    <FormLabel>Usuário</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="seu@email.com" {...field} />
+                      <Input type="text" placeholder="Seu usuário" {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

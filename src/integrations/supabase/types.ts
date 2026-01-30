@@ -59,6 +59,56 @@ export type Database = {
           },
         ]
       }
+      companies: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      company_positions: {
+        Row: {
+          company_id: string
+          created_at: string
+          id: string
+          name: string
+        }
+        Insert: {
+          company_id: string
+          created_at?: string
+          id?: string
+          name: string
+        }
+        Update: {
+          company_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "company_positions_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       criticality_points: {
         Row: {
           created_at: string
@@ -174,37 +224,65 @@ export type Database = {
         Row: {
           avatar_url: string | null
           cargo: string | null
+          company_id: string | null
           created_at: string
           id: string
+          is_active: boolean
           name: string
+          position_id: string | null
           updated_at: string
           user_id: string
+          username: string | null
           whatsapp: string | null
         }
         Insert: {
           avatar_url?: string | null
           cargo?: string | null
+          company_id?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           name: string
+          position_id?: string | null
           updated_at?: string
           user_id: string
+          username?: string | null
           whatsapp?: string | null
         }
         Update: {
           avatar_url?: string | null
           cargo?: string | null
+          company_id?: string | null
           created_at?: string
           id?: string
+          is_active?: boolean
           name?: string
+          position_id?: string | null
           updated_at?: string
           user_id?: string
+          username?: string | null
           whatsapp?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_position_id_fkey"
+            columns: ["position_id"]
+            isOneToOne: false
+            referencedRelation: "company_positions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       sectors: {
         Row: {
+          company_id: string | null
           created_at: string
           description: string | null
           id: string
@@ -212,6 +290,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          company_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -219,13 +298,22 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          company_id?: string | null
           created_at?: string
           description?: string | null
           id?: string
           name?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "sectors_company_id_fkey"
+            columns: ["company_id"]
+            isOneToOne: false
+            referencedRelation: "companies"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       task_checklist_items: {
         Row: {
@@ -456,6 +544,7 @@ export type Database = {
         Args: { p_profile_id: string; p_target_date?: string }
         Returns: string[]
       }
+      get_email_by_username: { Args: { _username: string }; Returns: string }
       get_pending_tasks_from_previous_days: {
         Args: { p_profile_id: string }
         Returns: {
