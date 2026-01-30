@@ -18,6 +18,20 @@ interface TaskStats {
   avgCompletionTime: number;
 }
 
+interface AdvancedKPIs {
+  totalPoints: number;
+  avgPointsPerUser: number;
+  topPerformerName: string;
+  topPerformerPoints: number;
+  worstPerformerName: string;
+  worstPerformerRate: number;
+  tasksPerUser: number;
+  alertsPerUser: number;
+  engagementRate: number;
+  criticalTasksCount: number;
+  overdueEstimate: number;
+}
+
 interface UserPerformance {
   profileId: string;
   name: string;
@@ -45,6 +59,7 @@ interface CriticalityBreakdown {
 
 interface GodModeData {
   taskStats: TaskStats;
+  advancedKPIs: AdvancedKPIs;
   userPerformances: UserPerformance[];
   dailyMetrics: DailyMetric[];
   criticalityBreakdown: CriticalityBreakdown[];
@@ -173,11 +188,37 @@ export function useGodModeStats(dateRange: DateRange) {
 
         // Calculate user metrics
         const activeUserIds = new Set(completions.map((c: any) => c.profile_id));
+        const sortedUserPerformances = userPerformances.sort((a, b) => b.totalPoints - a.totalPoints);
+
+        // Calculate advanced KPIs
+        const totalPoints = userPoints.reduce((sum: number, up: any) => sum + (up.total_points || 0), 0);
+        const avgPointsPerUser = profiles.length > 0 ? Math.round(totalPoints / profiles.length) : 0;
+        
+        const topPerformer = sortedUserPerformances[0];
+        const worstPerformer = [...userPerformances].sort((a, b) => a.completionRate - b.completionRate)[0];
+        
+        const criticalTasks = tasks.filter((t: any) => t.criticality === 'critical' || t.criticality === 'high');
+        const pendingCritical = criticalTasks.filter((t: any) => t.status !== 'done').length;
+        
+        const advancedKPIs: AdvancedKPIs = {
+          totalPoints,
+          avgPointsPerUser,
+          topPerformerName: topPerformer?.name || 'N/A',
+          topPerformerPoints: topPerformer?.totalPoints || 0,
+          worstPerformerName: worstPerformer?.name || 'N/A',
+          worstPerformerRate: worstPerformer?.completionRate || 0,
+          tasksPerUser: profiles.length > 0 ? Math.round((tasks.length / profiles.length) * 10) / 10 : 0,
+          alertsPerUser: profiles.length > 0 ? Math.round((alerts.length / profiles.length) * 10) / 10 : 0,
+          engagementRate: profiles.length > 0 ? Math.round((activeUserIds.size / profiles.length) * 100) : 0,
+          criticalTasksCount: criticalTasks.length,
+          overdueEstimate: pendingCritical,
+        };
 
         if (isMounted) {
           setData({
             taskStats,
-            userPerformances: userPerformances.sort((a, b) => b.totalPoints - a.totalPoints),
+            advancedKPIs,
+            userPerformances: sortedUserPerformances,
             dailyMetrics,
             criticalityBreakdown,
             totalUsers: profiles.length,
