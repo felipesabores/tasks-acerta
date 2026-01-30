@@ -37,7 +37,7 @@ import { useUserRole, AppRole } from '@/hooks/useUserRole';
 import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Save, Building2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
-import { SectorManagement } from '@/components/sectors/SectorManagement';
+import { CompanyManagement } from '@/components/companies/CompanyManagement';
 
 
 interface UserWithRole {
@@ -276,9 +276,9 @@ export default function UsersPage() {
               <Users className="h-4 w-4" />
               Usuários
             </TabsTrigger>
-            <TabsTrigger value="sectors" className="flex items-center gap-2">
+            <TabsTrigger value="companies" className="flex items-center gap-2">
               <Building2 className="h-4 w-4" />
-              Setores
+              Empresas
             </TabsTrigger>
             <TabsTrigger value="register" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
@@ -463,8 +463,8 @@ export default function UsersPage() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="sectors" className="space-y-6">
-            <SectorManagement />
+          <TabsContent value="companies" className="space-y-6">
+            <CompanyManagement />
           </TabsContent>
 
         </Tabs>

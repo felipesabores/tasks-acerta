@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -22,21 +23,35 @@ import {
 } from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useCompanies } from '@/hooks/useCompanies';
 import { Loader2, UserPlus } from 'lucide-react';
 import type { AppRole } from '@/hooks/useUserRole';
 
 const userFormSchema = z.object({
-  name: z.string().trim().min(1, 'Nome completo é obrigatório').max(100, 'Nome muito longo'),
-  whatsapp: z.string()
-    .transform((val) => val.replace(/\D/g, ''))
-    .refine((val) => val.length === 11, 'WhatsApp deve ter 11 dígitos (DDD + número)'),
-  email: z.string().trim().email('Email inválido').max(255, 'Email muito longo').or(z.literal('')),
-  cargo: z.string().trim().min(1, 'Cargo é obrigatório').max(100, 'Cargo muito longo'),
-  role: z.enum(['user', 'task_editor', 'admin']),
+  username: z.string()
+    .trim()
+    .min(3, 'Username deve ter pelo menos 3 caracteres')
+    .max(50, 'Username muito longo')
+    .regex(/^[a-zA-Z0-9_]+$/, 'Apenas letras, números e underscore'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  role: z.enum(['user', 'task_editor', 'admin', 'gestor_setor', 'gestor_geral', 'god_mode']),
+  companyId: z.string().min(1, 'Empresa é obrigatória'),
+  sectorId: z.string().min(1, 'Setor é obrigatório'),
+  positionId: z.string().min(1, 'Cargo é obrigatório'),
+  isActive: z.boolean(),
 });
 
 type UserFormValues = z.infer<typeof userFormSchema>;
+
+interface Sector {
+  id: string;
+  name: string;
+}
+
+interface Position {
+  id: string;
+  name: string;
+}
 
 interface UserRegistrationFormProps {
   onSuccess?: () => void;
@@ -44,42 +59,68 @@ interface UserRegistrationFormProps {
 
 export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
   const { toast } = useToast();
+  const { companies, fetchSectorsByCompany, fetchPositionsByCompany } = useCompanies();
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  // Phone mask function (Brazilian format)
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '').slice(0, 11);
-    if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
-  };
+  const [sectors, setSectors] = useState<Sector[]>([]);
+  const [positions, setPositions] = useState<Position[]>([]);
+  const [loadingSectors, setLoadingSectors] = useState(false);
+  const [loadingPositions, setLoadingPositions] = useState(false);
 
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
-      name: '',
-      whatsapp: '',
-      email: '',
-      cargo: '',
-      role: 'user',
+      username: '',
       password: '',
+      role: 'user',
+      companyId: '',
+      sectorId: '',
+      positionId: '',
+      isActive: true,
     },
   });
+
+  const selectedCompanyId = form.watch('companyId');
+
+  // Load sectors and positions when company changes
+  useEffect(() => {
+    if (selectedCompanyId) {
+      // Reset sector and position
+      form.setValue('sectorId', '');
+      form.setValue('positionId', '');
+      
+      // Fetch sectors
+      setLoadingSectors(true);
+      fetchSectorsByCompany(selectedCompanyId).then(data => {
+        setSectors(data);
+        setLoadingSectors(false);
+      });
+
+      // Fetch positions
+      setLoadingPositions(true);
+      fetchPositionsByCompany(selectedCompanyId).then(data => {
+        setPositions(data);
+        setLoadingPositions(false);
+      });
+    } else {
+      setSectors([]);
+      setPositions([]);
+    }
+  }, [selectedCompanyId, fetchSectorsByCompany, fetchPositionsByCompany, form]);
 
   const onSubmit = async (values: UserFormValues) => {
     setIsSubmitting(true);
 
     try {
-      // Generate email if not provided
-      const email = values.email || `${values.whatsapp.replace(/\D/g, '')}@placeholder.local`;
+      // Generate internal email from username
+      const internalEmail = `${values.username.toLowerCase()}@internal.acertamais.app`;
 
       // Create user via Supabase Auth
       const { data: authData, error: authError } = await supabase.auth.signUp({
-        email,
+        email: internalEmail,
         password: values.password,
         options: {
           data: {
-            name: values.name,
+            name: values.username,
           },
         },
       });
@@ -94,13 +135,37 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
-          whatsapp: values.whatsapp,
-          cargo: values.cargo,
+          username: values.username,
+          company_id: values.companyId,
+          position_id: values.positionId,
+          is_active: values.isActive,
         })
         .eq('user_id', authData.user.id);
 
       if (profileError) {
         console.error('Error updating profile:', profileError);
+        throw profileError;
+      }
+
+      // Get profile id for sector assignment
+      const { data: profile } = await supabase
+        .from('profiles')
+        .select('id')
+        .eq('user_id', authData.user.id)
+        .single();
+
+      if (profile) {
+        // Assign user to sector
+        const { error: sectorError } = await supabase
+          .from('profile_sectors')
+          .insert({
+            profile_id: profile.id,
+            sector_id: values.sectorId,
+          });
+
+        if (sectorError) {
+          console.error('Error assigning sector:', sectorError);
+        }
       }
 
       // Update user role if not 'user'
@@ -117,10 +182,12 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
       toast({
         title: 'Usuário cadastrado',
-        description: `${values.name} foi cadastrado com sucesso.`,
+        description: `${values.username} foi cadastrado com sucesso.`,
       });
 
       form.reset();
+      setSectors([]);
+      setPositions([]);
       onSuccess?.();
     } catch (error: any) {
       console.error('Error creating user:', error);
@@ -134,18 +201,30 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
     }
   };
 
+  const roleLabels: Record<string, string> = {
+    user: 'Usuário',
+    task_editor: 'Editor de Tarefas',
+    admin: 'Administrador',
+    gestor_setor: 'Gestor de Setor',
+    gestor_geral: 'Gestor Geral',
+    god_mode: 'God Mode',
+  };
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
-          name="name"
+          name="username"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Nome Completo *</FormLabel>
+              <FormLabel>Username *</FormLabel>
               <FormControl>
-                <Input placeholder="Ex: João da Silva" {...field} />
+                <Input placeholder="Ex: joao_silva" {...field} />
               </FormControl>
+              <FormDescription>
+                Apenas letras, números e underscore
+              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
@@ -153,45 +232,12 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
         <FormField
           control={form.control}
-          name="whatsapp"
+          name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>WhatsApp *</FormLabel>
+              <FormLabel>Senha *</FormLabel>
               <FormControl>
-                <Input 
-                  placeholder="(00) 00000-0000" 
-                  value={field.value}
-                  onChange={(e) => field.onChange(formatPhone(e.target.value))}
-                  maxLength={16}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="email"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Email</FormLabel>
-              <FormControl>
-                <Input type="email" placeholder="Ex: joao@empresa.com" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="cargo"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Cargo *</FormLabel>
-              <FormControl>
-                <Input placeholder="Ex: Analista de Vendas" {...field} />
+                <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -203,17 +249,19 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Papel no Sistema</FormLabel>
+              <FormLabel>Função no Sistema *</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Selecione o papel" />
+                    <SelectValue placeholder="Selecione uma função" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="user">Usuário</SelectItem>
-                  <SelectItem value="task_editor">Editor de Tarefas</SelectItem>
-                  <SelectItem value="admin">Administrador</SelectItem>
+                  {Object.entries(roleLabels).map(([value, label]) => (
+                    <SelectItem key={value} value={value}>
+                      {label}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -223,14 +271,138 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
         <FormField
           control={form.control}
-          name="password"
+          name="companyId"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Senha Inicial *</FormLabel>
-              <FormControl>
-                <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
-              </FormControl>
+              <FormLabel>Empresa *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Selecione uma empresa" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {companies.map((company) => (
+                    <SelectItem key={company.id} value={company.id}>
+                      {company.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
               <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="sectorId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Setor *</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                disabled={!selectedCompanyId || loadingSectors}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    {loadingSectors ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Carregando...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder={
+                        !selectedCompanyId 
+                          ? "Selecione uma empresa primeiro" 
+                          : "Selecione um setor"
+                      } />
+                    )}
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {sectors.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      Nenhum setor disponível
+                    </SelectItem>
+                  ) : (
+                    sectors.map((sector) => (
+                      <SelectItem key={sector.id} value={sector.id}>
+                        {sector.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="positionId"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Cargo *</FormLabel>
+              <Select 
+                onValueChange={field.onChange} 
+                value={field.value}
+                disabled={!selectedCompanyId || loadingPositions}
+              >
+                <FormControl>
+                  <SelectTrigger>
+                    {loadingPositions ? (
+                      <div className="flex items-center gap-2">
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        <span>Carregando...</span>
+                      </div>
+                    ) : (
+                      <SelectValue placeholder={
+                        !selectedCompanyId 
+                          ? "Selecione uma empresa primeiro" 
+                          : "Selecione um cargo"
+                      } />
+                    )}
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  {positions.length === 0 ? (
+                    <SelectItem value="none" disabled>
+                      Nenhum cargo disponível
+                    </SelectItem>
+                  ) : (
+                    positions.map((position) => (
+                      <SelectItem key={position.id} value={position.id}>
+                        {position.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="isActive"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-start space-x-3 space-y-0 rounded-md border p-4">
+              <FormControl>
+                <Checkbox
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+              <div className="space-y-1 leading-none">
+                <FormLabel>Usuário ativo</FormLabel>
+                <FormDescription>
+                  Usuários inativos não podem fazer login no sistema
+                </FormDescription>
+              </div>
             </FormItem>
           )}
         />
