@@ -6,8 +6,6 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -23,29 +21,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
-import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Save, Building2 } from 'lucide-react';
+import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Building2, CheckCircle, XCircle } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
+import { UserEditDialog, UserToEdit } from '@/components/users/UserEditDialog';
 import { CompanyManagement } from '@/components/companies/CompanyManagement';
-
 
 interface UserWithRole {
   id: string;
   user_id: string;
   name: string;
+  username?: string;
   whatsapp?: string;
   cargo?: string;
+  company_id?: string;
+  company_name?: string;
+  position_id?: string;
+  position_name?: string;
+  sector_id?: string;
+  sector_name?: string;
+  is_active: boolean;
   role: AppRole;
 }
 
@@ -55,30 +53,16 @@ export default function UsersPage() {
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
-  
-  // Edit user dialog state
-  const [editingUser, setEditingUser] = useState<UserWithRole | null>(null);
-  const [editForm, setEditForm] = useState({ name: '', whatsapp: '', cargo: '' });
-  const [saving, setSaving] = useState(false);
-
-  // Phone mask function (Brazilian format)
-  const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, '').slice(0, 11);
-    if (numbers.length <= 2) return numbers;
-    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
-    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
-  };
-
-  // Validate WhatsApp has 11 digits
-  const isValidWhatsApp = (value: string) => {
-    const digits = value.replace(/\D/g, '');
-    return digits.length === 11;
-  };
+  const [editingUser, setEditingUser] = useState<UserToEdit | null>(null);
 
   const fetchUsers = useCallback(async () => {
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
-      .select('*')
+      .select(`
+        *,
+        companies:company_id(id, name),
+        company_positions:position_id(id, name)
+      `)
       .order('name');
 
     if (profilesError) {
@@ -87,23 +71,38 @@ export default function UsersPage() {
       return;
     }
 
-    // Fetch roles for each user
+    // Fetch roles and sectors for each user
     const usersWithRoles: UserWithRole[] = [];
     
     for (const profile of profiles || []) {
-      const { data: roleData } = await supabase
-        .from('user_roles')
-        .select('role')
-        .eq('user_id', profile.user_id)
-        .maybeSingle();
+      const [roleResult, sectorResult] = await Promise.all([
+        supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', profile.user_id)
+          .maybeSingle(),
+        supabase
+          .from('profile_sectors')
+          .select('sector_id, sectors:sector_id(id, name)')
+          .eq('profile_id', profile.id)
+          .maybeSingle()
+      ]);
 
       usersWithRoles.push({
         id: profile.id,
         user_id: profile.user_id,
         name: profile.name,
+        username: profile.username || undefined,
         whatsapp: profile.whatsapp || undefined,
         cargo: profile.cargo || undefined,
-        role: (roleData?.role as AppRole) || 'user',
+        company_id: profile.company_id || undefined,
+        company_name: (profile.companies as any)?.name || undefined,
+        position_id: profile.position_id || undefined,
+        position_name: (profile.company_positions as any)?.name || undefined,
+        sector_id: (sectorResult.data?.sectors as any)?.id || undefined,
+        sector_name: (sectorResult.data?.sectors as any)?.name || undefined,
+        is_active: profile.is_active,
+        role: (roleResult.data?.role as AppRole) || 'user',
       });
     }
 
@@ -120,7 +119,6 @@ export default function UsersPage() {
   const handleRoleChange = async (userId: string, authUserId: string, newRole: AppRole) => {
     setUpdatingUserId(userId);
 
-    // First check if user already has a role
     const { data: existingRole } = await supabase
       .from('user_roles')
       .select('id')
@@ -130,14 +128,12 @@ export default function UsersPage() {
     let error;
 
     if (existingRole) {
-      // Update existing role
       const { error: updateError } = await supabase
         .from('user_roles')
         .update({ role: newRole })
         .eq('user_id', authUserId);
       error = updateError;
     } else {
-      // Insert new role
       const { error: insertError } = await supabase
         .from('user_roles')
         .insert({ user_id: authUserId, role: newRole });
@@ -162,54 +158,18 @@ export default function UsersPage() {
   };
 
   const openEditDialog = (user: UserWithRole) => {
-    setEditingUser(user);
-    setEditForm({
+    setEditingUser({
+      id: user.id,
+      user_id: user.user_id,
       name: user.name,
-      whatsapp: user.whatsapp || '',
-      cargo: user.cargo || '',
+      username: user.username,
+      whatsapp: user.whatsapp,
+      company_id: user.company_id,
+      position_id: user.position_id,
+      sector_id: user.sector_id,
+      is_active: user.is_active,
+      role: user.role,
     });
-  };
-
-  const handleSaveProfile = async () => {
-    if (!editingUser) return;
-    
-    // Validate WhatsApp if provided
-    if (editForm.whatsapp && !isValidWhatsApp(editForm.whatsapp)) {
-      toast({
-        title: 'WhatsApp inválido',
-        description: 'O número deve ter 11 dígitos (DDD + número).',
-        variant: 'destructive',
-      });
-      return;
-    }
-    
-    setSaving(true);
-    
-    const { error } = await supabase
-      .from('profiles')
-      .update({
-        name: editForm.name,
-        whatsapp: editForm.whatsapp || null,
-        cargo: editForm.cargo || null,
-      })
-      .eq('id', editingUser.id);
-
-    if (error) {
-      toast({
-        title: 'Erro ao atualizar perfil',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } else {
-      toast({
-        title: 'Perfil atualizado',
-        description: 'Os dados do usuário foram atualizados com sucesso.',
-      });
-      setEditingUser(null);
-      fetchUsers();
-    }
-    
-    setSaving(false);
   };
 
   const getRoleBadge = (role: AppRole) => {
@@ -302,13 +262,16 @@ export default function UsersPage() {
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
                   </div>
                 ) : (
-                  <div className="rounded-lg border overflow-hidden">
+                  <div className="rounded-lg border overflow-x-auto">
                     <Table>
                       <TableHeader>
                         <TableRow className="bg-muted/50 hover:bg-muted/50">
                           <TableHead>Usuário</TableHead>
+                          <TableHead>Username</TableHead>
+                          <TableHead>Empresa</TableHead>
+                          <TableHead>Setor</TableHead>
                           <TableHead>Cargo</TableHead>
-                          <TableHead>WhatsApp</TableHead>
+                          <TableHead>Status</TableHead>
                           <TableHead>Papel</TableHead>
                           <TableHead>Alterar Papel</TableHead>
                           <TableHead className="w-[80px]">Editar</TableHead>
@@ -334,18 +297,48 @@ export default function UsersPage() {
                                   </Avatar>
                                   <div>
                                     <p className="font-medium">{user.name}</p>
+                                    {user.whatsapp && (
+                                      <p className="text-xs text-muted-foreground">{user.whatsapp}</p>
+                                    )}
                                   </div>
                                 </div>
                               </TableCell>
                               <TableCell>
+                                <span className="text-muted-foreground font-mono text-sm">
+                                  {user.username || '-'}
+                                </span>
+                              </TableCell>
+                              <TableCell>
+                                {user.company_name ? (
+                                  <Badge variant="outline" className="font-normal">
+                                    {user.company_name}
+                                  </Badge>
+                                ) : (
+                                  <span className="text-muted-foreground">-</span>
+                                )}
+                              </TableCell>
+                              <TableCell>
                                 <span className="text-muted-foreground">
-                                  {user.cargo || '-'}
+                                  {user.sector_name || '-'}
                                 </span>
                               </TableCell>
                               <TableCell>
                                 <span className="text-muted-foreground">
-                                  {user.whatsapp || '-'}
+                                  {user.position_name || user.cargo || '-'}
                                 </span>
+                              </TableCell>
+                              <TableCell>
+                                {user.is_active ? (
+                                  <Badge variant="outline" className="text-green-600 border-green-600/30 bg-green-50 dark:bg-green-950/20">
+                                    <CheckCircle className="h-3 w-3 mr-1" />
+                                    Ativo
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-destructive border-destructive/30 bg-destructive/10">
+                                    <XCircle className="h-3 w-3 mr-1" />
+                                    Inativo
+                                  </Badge>
+                                )}
                               </TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-2">
@@ -454,7 +447,7 @@ export default function UsersPage() {
                   Cadastrar Novo Usuário
                 </CardTitle>
                 <CardDescription>
-                  Preencha os dados do novo responsável. Nome, WhatsApp e cargo são obrigatórios.
+                  Preencha os dados do novo responsável. Nome, Username, Empresa, Setor e Cargo são obrigatórios.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -470,65 +463,13 @@ export default function UsersPage() {
         </Tabs>
 
         {/* Edit User Dialog */}
-        <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle className="flex items-center gap-2">
-                <Pencil className="h-5 w-5" />
-                Editar Usuário
-              </DialogTitle>
-              <DialogDescription>
-                Atualize os dados do usuário. O email não pode ser alterado.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid gap-2">
-                <Label htmlFor="name">Nome Completo</Label>
-                <Input
-                  id="name"
-                  value={editForm.name}
-                  onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                  placeholder="Nome do usuário"
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="cargo">Cargo</Label>
-                <Input
-                  id="cargo"
-                  value={editForm.cargo}
-                  onChange={(e) => setEditForm({ ...editForm, cargo: e.target.value })}
-                  placeholder="Ex: Analista, Gerente..."
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="whatsapp">WhatsApp</Label>
-                <Input
-                  id="whatsapp"
-                  value={editForm.whatsapp}
-                  onChange={(e) => setEditForm({ ...editForm, whatsapp: formatPhone(e.target.value) })}
-                  placeholder="(00) 00000-0000"
-                  maxLength={16}
-                />
-                {editForm.whatsapp && !isValidWhatsApp(editForm.whatsapp) && (
-                  <p className="text-sm text-destructive">WhatsApp deve ter 11 dígitos</p>
-                )}
-              </div>
-            </div>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setEditingUser(null)}>
-                Cancelar
-              </Button>
-              <Button onClick={handleSaveProfile} disabled={saving || !editForm.name.trim()}>
-                {saving ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Save className="h-4 w-4 mr-2" />
-                )}
-                Salvar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <UserEditDialog
+          user={editingUser}
+          open={!!editingUser}
+          onOpenChange={(open) => !open && setEditingUser(null)}
+          onSuccess={fetchUsers}
+          isGodMode={isGodMode}
+        />
       </div>
     </AppLayout>
   );
