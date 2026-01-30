@@ -26,14 +26,26 @@ interface PerformanceChartProps {
   data: DailyMetric[];
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({ active, payload }: any) => {
   if (!active || !payload || !payload.length) return null;
+
+  // Get the original date from the payload data
+  const originalDate = payload[0]?.payload?.date;
+  
+  let formattedDate = '';
+  if (originalDate) {
+    try {
+      formattedDate = format(parseISO(originalDate), "dd 'de' MMMM", { locale: ptBR });
+    } catch {
+      formattedDate = originalDate;
+    }
+  }
 
   return (
     <div className="bg-popover/95 backdrop-blur-sm border border-border rounded-lg shadow-xl p-4">
-      <p className="font-semibold text-foreground mb-2">
-        {format(parseISO(label), "dd 'de' MMMM", { locale: ptBR })}
-      </p>
+      {formattedDate && (
+        <p className="font-semibold text-foreground mb-2">{formattedDate}</p>
+      )}
       <div className="space-y-1.5">
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm">
