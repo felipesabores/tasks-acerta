@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home, Zap } from 'lucide-react';
+import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home, Zap, Building2, Eye } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from '@/components/ui/logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +24,16 @@ import {
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut } = useAuth();
-  const { role, isAdmin, isGodMode, canCreateTasks, canManageUsers } = useUserRole();
+  const { 
+    role, 
+    isAdmin, 
+    isGodMode, 
+    isGestorSetor,
+    isGestorGeral,
+    canCreateTasks, 
+    canManageUsers,
+    canViewAllTasks,
+  } = useUserRole();
   const isCollapsed = state === 'collapsed';
 
   const userEmail = user?.email || '';
@@ -44,10 +53,17 @@ export function AppSidebar() {
         return 'Admin';
       case 'task_editor':
         return 'Editor';
+      case 'gestor_setor':
+        return 'Gestor Setor';
+      case 'gestor_geral':
+        return 'Gestor Geral';
       default:
         return 'Usuário';
     }
   };
+
+  // Check if user should see "Minhas Tarefas" - hide for admin-only roles
+  const showMyTasks = !isAdmin || isGestorSetor || isGestorGeral;
 
   return (
     <Sidebar collapsible="icon">
@@ -84,8 +100,8 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* My Tasks - visible to users and task editors, NOT admin */}
-              {!isAdmin && (
+              {/* My Tasks - visible to users, gestor_setor, gestor_geral, NOT pure admin */}
+              {showMyTasks && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Minhas Tarefas">
                     <NavLink
@@ -95,6 +111,40 @@ export function AppSidebar() {
                     >
                       <ClipboardList className="h-4 w-4" />
                       {!isCollapsed && <span>Minhas Tarefas</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
+
+              {/* Sector Tasks - visible to gestor_setor */}
+              {isGestorSetor && (
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Tarefas do Setor">
+                      <NavLink
+                        to="/sector-tasks"
+                        className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                      >
+                        <Building2 className="h-4 w-4" />
+                        {!isCollapsed && <span>Tarefas do Setor</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
+              )}
+
+              {/* All Tasks View - visible to gestor_geral (read-only) */}
+              {isGestorGeral && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Visão Geral">
+                    <NavLink
+                      to="/all-tasks-view"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <Eye className="h-4 w-4" />
+                      {!isCollapsed && <span>Visão Geral</span>}
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -130,7 +180,7 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {/* Users Management - visible to god_mode only */}
+              {/* Users Management - visible to god_mode and admin */}
               {canManageUsers && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Usuários">

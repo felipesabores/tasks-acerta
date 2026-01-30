@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type AppRole = 'god_mode' | 'admin' | 'task_editor' | 'user';
+export type AppRole = 'god_mode' | 'admin' | 'task_editor' | 'gestor_setor' | 'gestor_geral' | 'user';
 
 interface UserRole {
   id: string;
@@ -45,13 +45,20 @@ export function useUserRole() {
   const isGodMode = role === 'god_mode';
   const isAdmin = role === 'admin' || isGodMode;
   const isTaskEditor = role === 'task_editor';
+  const isGestorSetor = role === 'gestor_setor';
+  const isGestorGeral = role === 'gestor_geral';
   const isRegularUser = role === 'user';
 
-  const canCreateTasks = isAdmin || isTaskEditor;
+  // Permission flags
+  const canCreateTasks = isAdmin || isTaskEditor; // Global task creation
+  const canCreateSectorTasks = isGestorSetor; // Sector-specific task creation
   const canEditTasks = isAdmin || isTaskEditor;
   const canDeleteTasks = isAdmin;
-  const canManageUsers = isGodMode || isAdmin; // god_mode and admin can manage users
+  const canManageUsers = isGodMode || isAdmin;
   const canCheckTasks = true; // All authenticated users can check their tasks
+  const canViewAllTasks = isGodMode || isAdmin || isGestorGeral; // Read-only view of all tasks
+  const canViewSectorTasks = isGestorSetor; // View tasks in their sector
+  const canManageSectors = isGodMode || isAdmin; // Create/edit sectors
 
   return {
     role,
@@ -59,12 +66,18 @@ export function useUserRole() {
     isGodMode,
     isAdmin,
     isTaskEditor,
+    isGestorSetor,
+    isGestorGeral,
     isRegularUser,
     canCreateTasks,
+    canCreateSectorTasks,
     canEditTasks,
     canDeleteTasks,
     canManageUsers,
     canCheckTasks,
+    canViewAllTasks,
+    canViewSectorTasks,
+    canManageSectors,
     refetch: fetchRole,
   };
 }
