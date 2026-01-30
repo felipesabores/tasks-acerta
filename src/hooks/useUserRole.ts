@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
-export type AppRole = 'admin' | 'task_editor' | 'user';
+export type AppRole = 'god_mode' | 'admin' | 'task_editor' | 'user';
 
 interface UserRole {
   id: string;
@@ -42,7 +42,8 @@ export function useUserRole() {
     fetchRole();
   }, [fetchRole]);
 
-  const isAdmin = role === 'admin';
+  const isGodMode = role === 'god_mode';
+  const isAdmin = role === 'admin' || isGodMode;
   const isTaskEditor = role === 'task_editor';
   const isRegularUser = role === 'user';
 
@@ -55,6 +56,7 @@ export function useUserRole() {
   return {
     role,
     loading,
+    isGodMode,
     isAdmin,
     isTaskEditor,
     isRegularUser,
