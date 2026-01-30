@@ -1,8 +1,9 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { UserGreeting } from '@/components/home/UserGreeting';
 import { HorizontalLeaderboard } from '@/components/leaderboard/HorizontalLeaderboard';
 import { DailyTaskCard } from '@/components/tasks/DailyTaskCard';
+import { PendencyWarning } from '@/components/tasks/PendencyWarning';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { KPICard } from '@/components/godmode/KPICard';
@@ -23,9 +24,17 @@ import {
 } from 'lucide-react';
 
 export default function UserHomePage() {
-  const { tasks, completions, loading, submitDayCompletion, getTaskCompletion, stats } = useDailyTasks();
+  const { 
+    tasks, 
+    completions, 
+    loading, 
+    submitDayCompletion, 
+    getTaskCompletion, 
+    stats,
+    hasPendingDays,
+    pendingFromPreviousDays 
+  } = useDailyTasks();
   const [selectedStatuses, setSelectedStatuses] = useState<Record<string, CompletionStatus>>({});
-  const [submitting, setSubmitting] = useState(false);
 
   const handleStatusChange = (taskId: string, status: CompletionStatus) => {
     setSelectedStatuses(prev => ({
@@ -34,23 +43,32 @@ export default function UserHomePage() {
     }));
   };
 
-  const handleSubmitDay = async () => {
-    const taskCompletions = Object.entries(selectedStatuses).map(([taskId, status]) => ({
-      taskId,
-      status,
-    }));
-
-    if (taskCompletions.length === 0) {
-      return;
-    }
-
-    setSubmitting(true);
-    const success = await submitDayCompletion(taskCompletions);
+  const handleFinalizeTask = useCallback(async (taskId: string, status: CompletionStatus) => {
+    const success = await submitDayCompletion([{ taskId, status }]);
     if (success) {
-      setSelectedStatuses({});
+      setSelectedStatuses(prev => {
+        const updated = { ...prev };
+        delete updated[taskId];
+        return updated;
+      });
     }
-    setSubmitting(false);
-  };
+  }, [submitDayCompletion]);
+
+  const handleFinalizePendingTasks = useCallback(async (
+    taskCompletions: { taskId: string; status: CompletionStatus; date: string }[]
+  ) => {
+    // Group by date and submit each group
+    const groupedByDate = taskCompletions.reduce((acc, curr) => {
+      if (!acc[curr.date]) acc[curr.date] = [];
+      acc[curr.date].push({ taskId: curr.taskId, status: curr.status });
+      return acc;
+    }, {} as Record<string, { taskId: string; status: CompletionStatus }[]>);
+
+    for (const [date, tasks] of Object.entries(groupedByDate)) {
+      await submitDayCompletion(tasks, date);
+    }
+    return true;
+  }, [submitDayCompletion]);
 
   const pendingTasks = useMemo(() => {
     return tasks.filter(task => !getTaskCompletion(task.id));
@@ -60,13 +78,27 @@ export default function UserHomePage() {
     return tasks.filter(task => !!getTaskCompletion(task.id));
   }, [tasks, getTaskCompletion]);
 
-  const allPendingHaveStatus = pendingTasks.every(task => selectedStatuses[task.id]);
-
   if (loading) {
     return (
       <AppLayout title="Início">
         <div className="flex items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // If user has pending days, show the warning and block the task panel
+  if (hasPendingDays && pendingFromPreviousDays.length > 0) {
+    return (
+      <AppLayout title="Início">
+        <div className="space-y-6">
+          <UserGreeting />
+          
+          <PendencyWarning 
+            pendingTasks={pendingFromPreviousDays}
+            onFinalizeTasks={handleFinalizePendingTasks}
+          />
         </div>
       </AppLayout>
     );
@@ -119,21 +151,7 @@ export default function UserHomePage() {
           {/* Pending Tasks */}
           {pendingTasks.length > 0 ? (
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
-                <Button
-                  onClick={handleSubmitDay}
-                  disabled={!allPendingHaveStatus || submitting}
-                  className="bg-primary hover:bg-primary/90"
-                >
-                  {submitting ? (
-                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                  ) : (
-                    <CheckCircle2 className="h-4 w-4 mr-2" />
-                  )}
-                  Concluir o Dia
-                </Button>
-              </div>
+              <h2 className="text-lg font-semibold">Tarefas do Dia</h2>
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {pendingTasks.map(task => (
                   <DailyTaskCard
@@ -141,6 +159,7 @@ export default function UserHomePage() {
                     task={task}
                     selectedStatus={selectedStatuses[task.id] || null}
                     onStatusChange={handleStatusChange}
+                    onFinalize={handleFinalizeTask}
                   />
                 ))}
               </div>

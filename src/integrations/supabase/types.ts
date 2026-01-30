@@ -22,7 +22,7 @@ export type Database = {
           is_read: boolean
           message: string
           profile_id: string
-          task_id: string
+          task_id: string | null
         }
         Insert: {
           alert_date?: string
@@ -31,7 +31,7 @@ export type Database = {
           is_read?: boolean
           message: string
           profile_id: string
-          task_id: string
+          task_id?: string | null
         }
         Update: {
           alert_date?: string
@@ -40,7 +40,7 @@ export type Database = {
           is_read?: boolean
           message?: string
           profile_id?: string
-          task_id?: string
+          task_id?: string | null
         }
         Relationships: [
           {
@@ -281,9 +281,12 @@ export type Database = {
           due_date: string | null
           id: string
           is_mandatory: boolean | null
+          is_template: boolean | null
+          parent_task_id: string | null
           points: number | null
           sector_id: string | null
           status: Database["public"]["Enums"]["task_status"]
+          task_date: string | null
           title: string
           updated_at: string
         }
@@ -296,9 +299,12 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_mandatory?: boolean | null
+          is_template?: boolean | null
+          parent_task_id?: string | null
           points?: number | null
           sector_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          task_date?: string | null
           title: string
           updated_at?: string
         }
@@ -311,9 +317,12 @@ export type Database = {
           due_date?: string | null
           id?: string
           is_mandatory?: boolean | null
+          is_template?: boolean | null
+          parent_task_id?: string | null
           points?: number | null
           sector_id?: string | null
           status?: Database["public"]["Enums"]["task_status"]
+          task_date?: string | null
           title?: string
           updated_at?: string
         }
@@ -323,6 +332,13 @@ export type Database = {
             columns: ["assigned_to"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tasks_parent_task_id_fkey"
+            columns: ["parent_task_id"]
+            isOneToOne: false
+            referencedRelation: "tasks"
             referencedColumns: ["id"]
           },
           {
@@ -398,11 +414,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      clone_tasks_for_day: {
+        Args: { p_profile_id: string; p_target_date?: string }
+        Returns: string[]
+      }
+      get_pending_tasks_from_previous_days: {
+        Args: { p_profile_id: string }
+        Returns: {
+          criticality: string
+          is_mandatory: boolean
+          points: number
+          task_date: string
+          task_id: string
+          task_title: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
       get_user_sector_ids: { Args: { _user_id: string }; Returns: string[] }
+      has_pending_tasks: { Args: { p_profile_id: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]

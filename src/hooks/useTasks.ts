@@ -35,6 +35,10 @@ export interface Task {
   criticality: 'low' | 'medium' | 'high' | 'critical';
   is_mandatory: boolean;
   points: number;
+  sector_id: string | null;
+  task_date: string | null;
+  parent_task_id: string | null;
+  is_template: boolean;
   assignee?: Profile | null;
   checklist_items?: ChecklistItem[];
 }
@@ -44,11 +48,12 @@ export interface TaskFormData {
   description?: string;
   status: 'pending' | 'in_progress' | 'done';
   assignedToId: string;
-  dueDate?: Date;
+  sectorId?: string;
   criticality?: 'low' | 'medium' | 'high' | 'critical';
   isMandatory?: boolean;
   points?: number;
   checklistItems?: string[];
+  isTemplate?: boolean;
 }
 
 export function useTasks() {
@@ -95,6 +100,8 @@ export function useTasks() {
     const typedData = (data || []).map(task => ({
       ...task,
       criticality: (task.criticality || 'medium') as 'low' | 'medium' | 'high' | 'critical',
+      is_mandatory: task.is_mandatory || false,
+      is_template: task.is_template || false,
     }));
 
     setTasks(typedData);
@@ -114,13 +121,15 @@ export function useTasks() {
     const { data: taskData, error } = await supabase.from('tasks').insert({
       title: data.title,
       description: data.description || null,
-      status: data.status,
+      status: 'pending', // Always starts as pending
       assigned_to: data.assignedToId || null,
       created_by: user.id,
-      due_date: data.dueDate?.toISOString() || null,
+      sector_id: data.sectorId || null,
       criticality: data.criticality || 'medium',
       is_mandatory: data.isMandatory || false,
       points: data.points || 0,
+      is_template: data.isTemplate ?? true, // New tasks are templates by default
+      task_date: new Date().toISOString().split('T')[0],
     }).select().single();
 
     if (error) {
@@ -159,7 +168,7 @@ export function useTasks() {
     if (data.description !== undefined) updateData.description = data.description || null;
     if (data.status !== undefined) updateData.status = data.status;
     if (data.assignedToId !== undefined) updateData.assigned_to = data.assignedToId || null;
-    if (data.dueDate !== undefined) updateData.due_date = data.dueDate?.toISOString() || null;
+    if (data.sectorId !== undefined) updateData.sector_id = data.sectorId || null;
     if (data.criticality !== undefined) updateData.criticality = data.criticality;
     if (data.isMandatory !== undefined) updateData.is_mandatory = data.isMandatory;
     if (data.points !== undefined) updateData.points = data.points;
