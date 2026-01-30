@@ -1,4 +1,4 @@
-import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home, Zap, Building2, Eye } from 'lucide-react';
+import { LayoutDashboard, ListTodo, LogOut, Users, ClipboardList, Trophy, Home, Zap, Building2, Eye, FileText } from 'lucide-react';
 import { NavLink } from '@/components/NavLink';
 import { Logo } from '@/components/ui/logo';
 import { useAuth } from '@/contexts/AuthContext';
@@ -198,18 +198,32 @@ export function AppSidebar() {
 
               {/* God Mode - visible only to god_mode users */}
               {isGodMode && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="God Mode">
-                    <NavLink
-                      to="/god-mode"
-                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                    >
-                      <Zap className="h-4 w-4" />
-                      {!isCollapsed && <span>God Mode</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                <>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="God Mode">
+                      <NavLink
+                        to="/god-mode"
+                        className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                      >
+                        <Zap className="h-4 w-4" />
+                        {!isCollapsed && <span>God Mode</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton asChild tooltip="Relatório Executivo">
+                      <NavLink
+                        to="/executive-report"
+                        className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                        activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                      >
+                        <FileText className="h-4 w-4" />
+                        {!isCollapsed && <span>Relatório Executivo</span>}
+                      </NavLink>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </>
               )}
             </SidebarMenu>
           </SidebarGroupContent>
