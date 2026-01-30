@@ -14,6 +14,7 @@ import UsersPage from "./pages/UsersPage";
 import GodModePage from "./pages/GodModePage";
 import SectorTasksPage from "./pages/SectorTasksPage";
 import AllTasksViewPage from "./pages/AllTasksViewPage";
+import ExecutiveReportPage from "./pages/ExecutiveReportPage";
 import AuthPage from "./pages/AuthPage";
 import NotFound from "./pages/NotFound";
 
@@ -90,6 +91,14 @@ const App = () => (
                 element={
                   <ProtectedRoute>
                     <AllTasksViewPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/executive-report"
+                element={
+                  <ProtectedRoute>
+                    <ExecutiveReportPage />
                   </ProtectedRoute>
                 }
               />
