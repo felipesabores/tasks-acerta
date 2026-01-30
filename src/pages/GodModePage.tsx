@@ -27,7 +27,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 
 export default function GodModePage() {
-  const [dateRange, setDateRange] = useState<DateRange>(getDateRangeFromPreset('last7days'));
+  const [dateRange, setDateRange] = useState<DateRange>(getDateRangeFromPreset('today'));
   const { data, loading, error } = useGodModeStats(dateRange);
 
   if (loading) {
