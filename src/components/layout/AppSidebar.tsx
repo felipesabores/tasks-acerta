@@ -53,7 +53,15 @@ export function AppSidebar() {
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center justify-center w-full">
-          <Logo size="md" forceVariant="dark" />
+          {isCollapsed ? (
+            <img 
+              src="/favicon.ico" 
+              alt="AcertaMais" 
+              className="h-8 w-8"
+            />
+          ) : (
+            <Logo size="md" forceVariant="dark" />
+          )}
         </div>
       </SidebarHeader>
       <SidebarContent>
