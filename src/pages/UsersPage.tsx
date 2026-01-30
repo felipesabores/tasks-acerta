@@ -68,6 +68,12 @@ export default function UsersPage() {
     return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
   };
 
+  // Validate WhatsApp has 11 digits
+  const isValidWhatsApp = (value: string) => {
+    const digits = value.replace(/\D/g, '');
+    return digits.length === 11;
+  };
+
   const fetchUsers = useCallback(async () => {
     const { data: profiles, error: profilesError } = await supabase
       .from('profiles')
@@ -165,6 +171,16 @@ export default function UsersPage() {
 
   const handleSaveProfile = async () => {
     if (!editingUser) return;
+    
+    // Validate WhatsApp if provided
+    if (editForm.whatsapp && !isValidWhatsApp(editForm.whatsapp)) {
+      toast({
+        title: 'WhatsApp inválido',
+        description: 'O número deve ter 11 dígitos (DDD + número).',
+        variant: 'destructive',
+      });
+      return;
+    }
     
     setSaving(true);
     
@@ -467,6 +483,9 @@ export default function UsersPage() {
                   placeholder="(00) 00000-0000"
                   maxLength={16}
                 />
+                {editForm.whatsapp && !isValidWhatsApp(editForm.whatsapp) && (
+                  <p className="text-sm text-destructive">WhatsApp deve ter 11 dígitos</p>
+                )}
               </div>
             </div>
             <DialogFooter>

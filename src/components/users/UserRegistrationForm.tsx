@@ -27,7 +27,9 @@ import type { AppRole } from '@/hooks/useUserRole';
 
 const userFormSchema = z.object({
   name: z.string().trim().min(1, 'Nome completo é obrigatório').max(100, 'Nome muito longo'),
-  whatsapp: z.string().trim().min(1, 'WhatsApp é obrigatório').max(20, 'WhatsApp muito longo'),
+  whatsapp: z.string()
+    .transform((val) => val.replace(/\D/g, ''))
+    .refine((val) => val.length === 11, 'WhatsApp deve ter 11 dígitos (DDD + número)'),
   email: z.string().trim().email('Email inválido').max(255, 'Email muito longo').or(z.literal('')),
   cargo: z.string().trim().min(1, 'Cargo é obrigatório').max(100, 'Cargo muito longo'),
   role: z.enum(['user', 'task_editor', 'admin']),
