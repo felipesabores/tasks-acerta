@@ -34,9 +34,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
-import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Save } from 'lucide-react';
+import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Save, Building2 } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
+import { SectorManagement } from '@/components/sectors/SectorManagement';
 
 
 interface UserWithRole {
@@ -270,10 +271,14 @@ export default function UsersPage() {
         />
 
         <Tabs defaultValue="users" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               Usuários
+            </TabsTrigger>
+            <TabsTrigger value="sectors" className="flex items-center gap-2">
+              <Building2 className="h-4 w-4" />
+              Setores
             </TabsTrigger>
             <TabsTrigger value="register" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
@@ -456,6 +461,10 @@ export default function UsersPage() {
                 <UserRegistrationForm onSuccess={fetchUsers} />
               </CardContent>
             </Card>
+          </TabsContent>
+
+          <TabsContent value="sectors" className="space-y-6">
+            <SectorManagement />
           </TabsContent>
 
         </Tabs>
