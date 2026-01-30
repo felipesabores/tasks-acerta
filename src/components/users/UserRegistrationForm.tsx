@@ -28,12 +28,19 @@ import { Loader2, UserPlus } from 'lucide-react';
 import type { AppRole } from '@/hooks/useUserRole';
 
 const userFormSchema = z.object({
+  name: z.string()
+    .trim()
+    .min(3, 'Nome deve ter pelo menos 3 caracteres')
+    .max(100, 'Nome muito longo'),
   username: z.string()
     .trim()
     .min(3, 'Username deve ter pelo menos 3 caracteres')
     .max(50, 'Username muito longo')
     .regex(/^[a-zA-Z0-9_]+$/, 'Apenas letras, números e underscore'),
   password: z.string().min(6, 'Senha deve ter pelo menos 6 caracteres'),
+  whatsapp: z.string()
+    .refine(val => !val || val.replace(/\D/g, '').length === 11, 'WhatsApp deve ter 11 dígitos')
+    .optional(),
   role: z.enum(['user', 'task_editor', 'admin', 'gestor_setor', 'gestor_geral', 'god_mode']),
   companyId: z.string().min(1, 'Empresa é obrigatória'),
   sectorId: z.string().min(1, 'Setor é obrigatório'),
@@ -69,8 +76,10 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
   const form = useForm<UserFormValues>({
     resolver: zodResolver(userFormSchema),
     defaultValues: {
+      name: '',
       username: '',
       password: '',
+      whatsapp: '',
       role: 'user',
       companyId: '',
       sectorId: '',
@@ -126,7 +135,7 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
         password: values.password,
         options: {
           data: {
-            name: values.username,
+            name: values.name,
           },
         },
       });
@@ -141,7 +150,9 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
       const { error: profileError } = await supabase
         .from('profiles')
         .update({
+          name: values.name,
           username: values.username,
+          whatsapp: values.whatsapp || null,
           company_id: values.companyId,
           position_id: values.positionId,
           is_active: values.isActive,
@@ -188,7 +199,7 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
       toast({
         title: 'Usuário cadastrado',
-        description: `${values.username} foi cadastrado com sucesso.`,
+        description: `${values.name} foi cadastrado com sucesso.`,
       });
 
       form.reset();
@@ -221,6 +232,20 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <FormField
           control={form.control}
+          name="name"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Nome Completo *</FormLabel>
+              <FormControl>
+                <Input placeholder="Ex: João da Silva" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
           name="username"
           render={({ field }) => (
             <FormItem>
@@ -229,7 +254,7 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
                 <Input placeholder="Ex: joao_silva" {...field} />
               </FormControl>
               <FormDescription>
-                Apenas letras, números e underscore
+                Usado para login. Apenas letras, números e underscore
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -244,6 +269,37 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
               <FormLabel>Senha *</FormLabel>
               <FormControl>
                 <Input type="password" placeholder="Mínimo 6 caracteres" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="whatsapp"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>WhatsApp</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="(00) 00000-0000" 
+                  {...field}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    const numbers = value.replace(/\D/g, '').slice(0, 11);
+                    let formatted = numbers;
+                    if (numbers.length > 2) {
+                      if (numbers.length <= 7) {
+                        formatted = `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+                      } else {
+                        formatted = `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7)}`;
+                      }
+                    }
+                    field.onChange(formatted);
+                  }}
+                  maxLength={16}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
