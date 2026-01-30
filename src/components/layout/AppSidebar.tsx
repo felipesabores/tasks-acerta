@@ -79,19 +79,21 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
 
-              {/* My Tasks - visible to all users */}
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild tooltip="Minhas Tarefas">
-                  <NavLink
-                    to="/my-tasks"
-                    className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
-                    activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                  >
-                    <ClipboardList className="h-4 w-4" />
-                    {!isCollapsed && <span>Minhas Tarefas</span>}
-                  </NavLink>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              {/* My Tasks - visible to users and task editors, NOT admin */}
+              {!isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip="Minhas Tarefas">
+                    <NavLink
+                      to="/my-tasks"
+                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
+                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
+                    >
+                      <ClipboardList className="h-4 w-4" />
+                      {!isCollapsed && <span>Minhas Tarefas</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
 
               {/* Leaderboard - visible to all users */}
               <SidebarMenuItem>
