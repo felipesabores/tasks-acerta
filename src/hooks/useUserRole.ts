@@ -50,7 +50,7 @@ export function useUserRole() {
   const canCreateTasks = isAdmin || isTaskEditor;
   const canEditTasks = isAdmin || isTaskEditor;
   const canDeleteTasks = isAdmin;
-  const canManageUsers = isGodMode; // Only god_mode can manage users
+  const canManageUsers = isGodMode || isAdmin; // god_mode and admin can manage users
   const canCheckTasks = true; // All authenticated users can check their tasks
 
   return {
