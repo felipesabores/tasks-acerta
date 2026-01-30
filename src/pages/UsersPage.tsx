@@ -22,10 +22,10 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
-import { Loader2, Users, Shield, Edit, User, UserPlus, Award } from 'lucide-react';
+import { Loader2, Users, Shield, Edit, User, UserPlus } from 'lucide-react';
 import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
-import { CriticalityPointsTable } from '@/components/users/CriticalityPointsTable';
+
 
 interface UserWithRole {
   id: string;
@@ -168,7 +168,7 @@ export default function UsersPage() {
   return (
     <AppLayout title="Gerenciar Usuários">
       <Tabs defaultValue="users" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="users" className="flex items-center gap-2">
             <Users className="h-4 w-4" />
             Usuários
@@ -176,10 +176,6 @@ export default function UsersPage() {
           <TabsTrigger value="register" className="flex items-center gap-2">
             <UserPlus className="h-4 w-4" />
             Cadastrar
-          </TabsTrigger>
-          <TabsTrigger value="points" className="flex items-center gap-2">
-            <Award className="h-4 w-4" />
-            Pontuação
           </TabsTrigger>
         </TabsList>
 
@@ -331,22 +327,6 @@ export default function UsersPage() {
           </Card>
         </TabsContent>
 
-        <TabsContent value="points">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Award className="h-5 w-5" />
-                Pontuação por Criticidade
-              </CardTitle>
-              <CardDescription>
-                Configure os pontos padrão de acordo com o grau de criticidade da tarefa.
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <CriticalityPointsTable />
-            </CardContent>
-          </Card>
-        </TabsContent>
       </Tabs>
     </AppLayout>
   );
