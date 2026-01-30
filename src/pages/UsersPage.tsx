@@ -38,7 +38,7 @@ interface UserWithRole {
 }
 
 export default function UsersPage() {
-  const { isAdmin, loading: roleLoading } = useUserRole();
+  const { isGodMode, canManageUsers, loading: roleLoading } = useUserRole();
   const { toast } = useToast();
   const [users, setUsers] = useState<UserWithRole[]>([]);
   const [loading, setLoading] = useState(true);
@@ -81,10 +81,10 @@ export default function UsersPage() {
   }, []);
 
   useEffect(() => {
-    if (isAdmin) {
+    if (canManageUsers) {
       fetchUsers();
     }
-  }, [isAdmin, fetchUsers]);
+  }, [canManageUsers, fetchUsers]);
 
   const handleRoleChange = async (userId: string, authUserId: string, newRole: AppRole) => {
     setUpdatingUserId(userId);
@@ -162,7 +162,7 @@ export default function UsersPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!canManageUsers) {
     return <Navigate to="/" replace />;
   }
 
