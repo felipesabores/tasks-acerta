@@ -24,7 +24,7 @@ import {
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut } = useAuth();
-  const { role, isAdmin, isGodMode, canCreateTasks } = useUserRole();
+  const { role, isAdmin, isGodMode, canCreateTasks, canManageUsers } = useUserRole();
   const isCollapsed = state === 'collapsed';
 
   const userEmail = user?.email || '';
@@ -130,8 +130,8 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {/* Users Management - visible to admins only */}
-              {isAdmin && (
+              {/* Users Management - visible to god_mode only */}
+              {canManageUsers && (
                 <SidebarMenuItem>
                   <SidebarMenuButton asChild tooltip="Usuários">
                     <NavLink
