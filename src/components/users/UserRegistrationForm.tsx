@@ -83,28 +83,34 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
 
   // Load sectors and positions when company changes
   useEffect(() => {
-    if (selectedCompanyId) {
-      // Reset sector and position
-      form.setValue('sectorId', '');
-      form.setValue('positionId', '');
-      
-      // Fetch sectors
-      setLoadingSectors(true);
-      fetchSectorsByCompany(selectedCompanyId).then(data => {
-        setSectors(data);
+    const loadCompanyData = async () => {
+      if (selectedCompanyId) {
+        console.log('Company selected:', selectedCompanyId);
+        
+        // Reset sector and position
+        form.setValue('sectorId', '');
+        form.setValue('positionId', '');
+        
+        // Fetch sectors
+        setLoadingSectors(true);
+        const sectorsData = await fetchSectorsByCompany(selectedCompanyId);
+        console.log('Loaded sectors:', sectorsData);
+        setSectors(sectorsData);
         setLoadingSectors(false);
-      });
 
-      // Fetch positions
-      setLoadingPositions(true);
-      fetchPositionsByCompany(selectedCompanyId).then(data => {
-        setPositions(data);
+        // Fetch positions
+        setLoadingPositions(true);
+        const positionsData = await fetchPositionsByCompany(selectedCompanyId);
+        console.log('Loaded positions:', positionsData);
+        setPositions(positionsData);
         setLoadingPositions(false);
-      });
-    } else {
-      setSectors([]);
-      setPositions([]);
-    }
+      } else {
+        setSectors([]);
+        setPositions([]);
+      }
+    };
+
+    loadCompanyData();
   }, [selectedCompanyId, fetchSectorsByCompany, fetchPositionsByCompany, form]);
 
   const onSubmit = async (values: UserFormValues) => {
