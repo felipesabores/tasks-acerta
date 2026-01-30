@@ -36,44 +36,49 @@ export function useCompanies() {
   const fetchCompanies = useCallback(async () => {
     setLoading(true);
     
-    // Fetch companies
-    const { data: companiesData, error: companiesError } = await supabase
-      .from('companies')
-      .select('*')
-      .order('name');
+    try {
+      // Fetch companies
+      const { data: companiesData, error: companiesError } = await supabase
+        .from('companies')
+        .select('*')
+        .order('name');
 
-    if (companiesError) {
-      console.error('Error fetching companies:', companiesError);
+      if (companiesError) {
+        console.error('Error fetching companies:', companiesError);
+        setLoading(false);
+        return;
+      }
+
+      // Fetch sectors and positions for each company
+      const companiesWithDetails: CompanyWithDetails[] = [];
+      
+      for (const company of companiesData || []) {
+        const [sectorsResult, positionsResult] = await Promise.all([
+          supabase
+            .from('sectors')
+            .select('*')
+            .eq('company_id', company.id)
+            .order('name'),
+          supabase
+            .from('company_positions')
+            .select('*')
+            .eq('company_id', company.id)
+            .order('name'),
+        ]);
+
+        companiesWithDetails.push({
+          ...company,
+          sectors: sectorsResult.data || [],
+          positions: positionsResult.data || [],
+        });
+      }
+
+      setCompanies(companiesWithDetails);
+    } catch (error) {
+      console.error('Error in fetchCompanies:', error);
+    } finally {
       setLoading(false);
-      return;
     }
-
-    // Fetch sectors and positions for each company
-    const companiesWithDetails: CompanyWithDetails[] = [];
-    
-    for (const company of companiesData || []) {
-      const [sectorsResult, positionsResult] = await Promise.all([
-        supabase
-          .from('sectors')
-          .select('*')
-          .eq('company_id', company.id)
-          .order('name'),
-        supabase
-          .from('company_positions')
-          .select('*')
-          .eq('company_id', company.id)
-          .order('name'),
-      ]);
-
-      companiesWithDetails.push({
-        ...company,
-        sectors: sectorsResult.data || [],
-        positions: positionsResult.data || [],
-      });
-    }
-
-    setCompanies(companiesWithDetails);
-    setLoading(false);
   }, []);
 
   useEffect(() => {
@@ -185,10 +190,11 @@ export function useCompanies() {
     await fetchCompanies();
   };
 
-  const fetchSectorsByCompany = async (companyId: string) => {
+  const fetchSectorsByCompany = useCallback(async (companyId: string) => {
+    console.log('Fetching sectors for company:', companyId);
     const { data, error } = await supabase
       .from('sectors')
-      .select('*')
+      .select('id, name')
       .eq('company_id', companyId)
       .order('name');
 
@@ -197,13 +203,15 @@ export function useCompanies() {
       return [];
     }
 
+    console.log('Sectors fetched:', data);
     return data || [];
-  };
+  }, []);
 
-  const fetchPositionsByCompany = async (companyId: string) => {
+  const fetchPositionsByCompany = useCallback(async (companyId: string) => {
+    console.log('Fetching positions for company:', companyId);
     const { data, error } = await supabase
       .from('company_positions')
-      .select('*')
+      .select('id, name')
       .eq('company_id', companyId)
       .order('name');
 
@@ -212,8 +220,9 @@ export function useCompanies() {
       return [];
     }
 
+    console.log('Positions fetched:', data);
     return data || [];
-  };
+  }, []);
 
   return {
     companies,
