@@ -123,22 +123,6 @@ export function AppSidebar() {
                 </SidebarMenuItem>
               )}
 
-              {/* All Tasks - visible to admins and task editors */}
-              {canCreateTasks && (
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild tooltip="Todas as Tarefas">
-                    <NavLink
-                      to="/tasks"
-                      className="flex items-center gap-3 px-3 py-2 rounded-md transition-colors hover:bg-sidebar-accent"
-                      activeClassName="bg-sidebar-accent text-sidebar-accent-foreground"
-                    >
-                      <ListTodo className="h-4 w-4" />
-                      {!isCollapsed && <span>Todas as Tarefas</span>}
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              )}
-
               {/* Users Management - visible to admins only */}
               {isAdmin && (
                 <SidebarMenuItem>
