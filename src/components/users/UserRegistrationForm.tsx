@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ComboboxWithCreate } from '@/components/ui/combobox-with-create';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -66,7 +67,7 @@ interface UserRegistrationFormProps {
 
 export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
   const { toast } = useToast();
-  const { companies, fetchSectorsByCompany, fetchPositionsByCompany } = useCompanies();
+  const { companies, fetchSectorsByCompany, fetchPositionsByCompany, addSector, addPosition } = useCompanies();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
@@ -362,41 +363,39 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Setor *</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-                disabled={!selectedCompanyId || loadingSectors}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    {loadingSectors ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Carregando...</span>
-                      </div>
-                    ) : (
-                      <SelectValue placeholder={
-                        !selectedCompanyId 
-                          ? "Selecione uma empresa primeiro" 
-                          : "Selecione um setor"
-                      } />
-                    )}
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {sectors.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      Nenhum setor disponível
-                    </SelectItem>
-                  ) : (
-                    sectors.map((sector) => (
-                      <SelectItem key={sector.id} value={sector.id}>
-                        {sector.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <ComboboxWithCreate
+                  options={sectors.map(s => ({ value: s.id, label: s.name }))}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder={
+                    !selectedCompanyId 
+                      ? "Selecione uma empresa primeiro" 
+                      : "Selecione um setor"
+                  }
+                  searchPlaceholder="Buscar setor..."
+                  emptyMessage="Nenhum setor encontrado."
+                  createLabel="Criar novo setor"
+                  createDialogTitle="Criar Novo Setor"
+                  createDialogDescription="Digite o nome do novo setor para esta empresa."
+                  createInputLabel="Nome do Setor"
+                  createInputPlaceholder="Ex: Financeiro"
+                  disabled={!selectedCompanyId}
+                  loading={loadingSectors}
+                  onCreate={async (name) => {
+                    if (!selectedCompanyId) return null;
+                    const created = await addSector(selectedCompanyId, name);
+                    if (created) {
+                      setSectors(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                      toast({
+                        title: 'Setor criado',
+                        description: `O setor "${name}" foi criado com sucesso.`,
+                      });
+                    }
+                    return created;
+                  }}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
@@ -408,41 +407,39 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cargo *</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                value={field.value}
-                disabled={!selectedCompanyId || loadingPositions}
-              >
-                <FormControl>
-                  <SelectTrigger>
-                    {loadingPositions ? (
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                        <span>Carregando...</span>
-                      </div>
-                    ) : (
-                      <SelectValue placeholder={
-                        !selectedCompanyId 
-                          ? "Selecione uma empresa primeiro" 
-                          : "Selecione um cargo"
-                      } />
-                    )}
-                  </SelectTrigger>
-                </FormControl>
-                <SelectContent>
-                  {positions.length === 0 ? (
-                    <SelectItem value="none" disabled>
-                      Nenhum cargo disponível
-                    </SelectItem>
-                  ) : (
-                    positions.map((position) => (
-                      <SelectItem key={position.id} value={position.id}>
-                        {position.name}
-                      </SelectItem>
-                    ))
-                  )}
-                </SelectContent>
-              </Select>
+              <FormControl>
+                <ComboboxWithCreate
+                  options={positions.map(p => ({ value: p.id, label: p.name }))}
+                  value={field.value}
+                  onValueChange={field.onChange}
+                  placeholder={
+                    !selectedCompanyId 
+                      ? "Selecione uma empresa primeiro" 
+                      : "Selecione um cargo"
+                  }
+                  searchPlaceholder="Buscar cargo..."
+                  emptyMessage="Nenhum cargo encontrado."
+                  createLabel="Criar novo cargo"
+                  createDialogTitle="Criar Novo Cargo"
+                  createDialogDescription="Digite o nome do novo cargo para esta empresa."
+                  createInputLabel="Nome do Cargo"
+                  createInputPlaceholder="Ex: Analista"
+                  disabled={!selectedCompanyId}
+                  loading={loadingPositions}
+                  onCreate={async (name) => {
+                    if (!selectedCompanyId) return null;
+                    const created = await addPosition(selectedCompanyId, name);
+                    if (created) {
+                      setPositions(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                      toast({
+                        title: 'Cargo criado',
+                        description: `O cargo "${name}" foi criado com sucesso.`,
+                      });
+                    }
+                    return created;
+                  }}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}
