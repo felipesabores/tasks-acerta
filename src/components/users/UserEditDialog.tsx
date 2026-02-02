@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
+import { ComboboxWithCreate } from '@/components/ui/combobox-with-create';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useCompanies } from '@/hooks/useCompanies';
@@ -71,7 +72,7 @@ const isValidWhatsApp = (value: string) => {
 
 export function UserEditDialog({ user, open, onOpenChange, onSuccess, isGodMode }: UserEditDialogProps) {
   const { toast } = useToast();
-  const { companies, fetchSectorsByCompany, fetchPositionsByCompany } = useCompanies();
+  const { companies, fetchSectorsByCompany, fetchPositionsByCompany, addSector, addPosition } = useCompanies();
   
   const [saving, setSaving] = useState(false);
   const [sectors, setSectors] = useState<Sector[]>([]);
@@ -325,39 +326,37 @@ export function UserEditDialog({ user, open, onOpenChange, onSuccess, isGodMode 
               <MapPin className="h-4 w-4" />
               Setor
             </Label>
-            <Select 
-              value={sectorId} 
+            <ComboboxWithCreate
+              options={sectors.map(s => ({ value: s.id, label: s.name }))}
+              value={sectorId}
               onValueChange={setSectorId}
-              disabled={!companyId || loadingSectors}
-            >
-              <SelectTrigger>
-                {loadingSectors ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Carregando...</span>
-                  </div>
-                ) : (
-                  <SelectValue placeholder={
-                    !companyId 
-                      ? "Selecione uma empresa primeiro" 
-                      : "Selecione um setor"
-                  } />
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {sectors.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    Nenhum setor disponível
-                  </SelectItem>
-                ) : (
-                  sectors.map((sector) => (
-                    <SelectItem key={sector.id} value={sector.id}>
-                      {sector.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+              placeholder={
+                !companyId 
+                  ? "Selecione uma empresa primeiro" 
+                  : "Selecione um setor"
+              }
+              searchPlaceholder="Buscar setor..."
+              emptyMessage="Nenhum setor encontrado."
+              createLabel="Criar novo setor"
+              createDialogTitle="Criar Novo Setor"
+              createDialogDescription="Digite o nome do novo setor para esta empresa."
+              createInputLabel="Nome do Setor"
+              createInputPlaceholder="Ex: Financeiro"
+              disabled={!companyId}
+              loading={loadingSectors}
+              onCreate={async (name) => {
+                if (!companyId) return null;
+                const created = await addSector(companyId, name);
+                if (created) {
+                  setSectors(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                  toast({
+                    title: 'Setor criado',
+                    description: `O setor "${name}" foi criado com sucesso.`,
+                  });
+                }
+                return created;
+              }}
+            />
           </div>
 
           {/* Position */}
@@ -366,39 +365,37 @@ export function UserEditDialog({ user, open, onOpenChange, onSuccess, isGodMode 
               <Briefcase className="h-4 w-4" />
               Cargo
             </Label>
-            <Select 
-              value={positionId} 
+            <ComboboxWithCreate
+              options={positions.map(p => ({ value: p.id, label: p.name }))}
+              value={positionId}
               onValueChange={setPositionId}
-              disabled={!companyId || loadingPositions}
-            >
-              <SelectTrigger>
-                {loadingPositions ? (
-                  <div className="flex items-center gap-2">
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                    <span>Carregando...</span>
-                  </div>
-                ) : (
-                  <SelectValue placeholder={
-                    !companyId 
-                      ? "Selecione uma empresa primeiro" 
-                      : "Selecione um cargo"
-                  } />
-                )}
-              </SelectTrigger>
-              <SelectContent>
-                {positions.length === 0 ? (
-                  <SelectItem value="none" disabled>
-                    Nenhum cargo disponível
-                  </SelectItem>
-                ) : (
-                  positions.map((position) => (
-                    <SelectItem key={position.id} value={position.id}>
-                      {position.name}
-                    </SelectItem>
-                  ))
-                )}
-              </SelectContent>
-            </Select>
+              placeholder={
+                !companyId 
+                  ? "Selecione uma empresa primeiro" 
+                  : "Selecione um cargo"
+              }
+              searchPlaceholder="Buscar cargo..."
+              emptyMessage="Nenhum cargo encontrado."
+              createLabel="Criar novo cargo"
+              createDialogTitle="Criar Novo Cargo"
+              createDialogDescription="Digite o nome do novo cargo para esta empresa."
+              createInputLabel="Nome do Cargo"
+              createInputPlaceholder="Ex: Analista"
+              disabled={!companyId}
+              loading={loadingPositions}
+              onCreate={async (name) => {
+                if (!companyId) return null;
+                const created = await addPosition(companyId, name);
+                if (created) {
+                  setPositions(prev => [...prev, created].sort((a, b) => a.name.localeCompare(b.name)));
+                  toast({
+                    title: 'Cargo criado',
+                    description: `O cargo "${name}" foi criado com sucesso.`,
+                  });
+                }
+                return created;
+              }}
+            />
           </div>
 
           {/* Role */}

@@ -224,6 +224,36 @@ export function useCompanies() {
     return data || [];
   }, []);
 
+  const addSector = useCallback(async (companyId: string, name: string) => {
+    const { data, error } = await supabase
+      .from('sectors')
+      .insert({ name, company_id: companyId })
+      .select('id, name')
+      .single();
+
+    if (error) {
+      console.error('Error adding sector:', error);
+      throw error;
+    }
+
+    return data;
+  }, []);
+
+  const addPosition = useCallback(async (companyId: string, name: string) => {
+    const { data, error } = await supabase
+      .from('company_positions')
+      .insert({ name, company_id: companyId })
+      .select('id, name')
+      .single();
+
+    if (error) {
+      console.error('Error adding position:', error);
+      throw error;
+    }
+
+    return data;
+  }, []);
+
   return {
     companies,
     loading,
@@ -232,6 +262,8 @@ export function useCompanies() {
     deleteCompany,
     fetchSectorsByCompany,
     fetchPositionsByCompany,
+    addSector,
+    addPosition,
     refetch: fetchCompanies,
   };
 }
