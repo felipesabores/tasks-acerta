@@ -29,6 +29,7 @@ import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
 import { UserEditDialog, UserToEdit } from '@/components/users/UserEditDialog';
 import { CompanyManagement } from '@/components/companies/CompanyManagement';
+import { PermissionsTable } from '@/components/users/PermissionsTable';
 
 interface UserWithRole {
   id: string;
@@ -242,11 +243,21 @@ export default function UsersPage() {
               <Building2 className="h-4 w-4" />
               Empresas
             </TabsTrigger>
+            {isGodMode && (
+              <TabsTrigger value="permissions" className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-purple-600" />
+                Permissões (God Mode)
+              </TabsTrigger>
+            )}
             <TabsTrigger value="register" className="flex items-center gap-2">
               <UserPlus className="h-4 w-4" />
               Cadastrar
             </TabsTrigger>
           </TabsList>
+
+          <TabsContent value="permissions">
+            <PermissionsTable />
+          </TabsContent>
 
           <TabsContent value="users" className="space-y-6">
             <Card className="border-border/50">

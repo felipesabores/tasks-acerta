@@ -50,14 +50,14 @@ export function useUserRole() {
   const isRegularUser = role === 'user';
 
   // Permission flags
-  const canCreateTasks = isAdmin || isTaskEditor; // Global task creation
-  const canCreateSectorTasks = isGestorSetor; // Sector-specific task creation
-  const canEditTasks = isAdmin || isTaskEditor;
-  const canDeleteTasks = isAdmin;
+  const canCreateTasks = isGodMode || isAdmin || isTaskEditor; // Global task creation
+  const canCreateSectorTasks = isGodMode || isGestorSetor; // Sector-specific task creation
+  const canEditTasks = isGodMode || isAdmin || isTaskEditor;
+  const canDeleteTasks = isGodMode || isAdmin;
   const canManageUsers = isGodMode || isAdmin;
   const canCheckTasks = true; // All authenticated users can check their tasks
   const canViewAllTasks = isGodMode || isAdmin || isGestorGeral; // Read-only view of all tasks
-  const canViewSectorTasks = isGestorSetor; // View tasks in their sector
+  const canViewSectorTasks = isGodMode || isGestorSetor; // View tasks in their sector
   const canManageSectors = isGodMode || isAdmin; // Create/edit sectors
 
   return {
