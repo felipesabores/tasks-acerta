@@ -37,7 +37,7 @@ export function TaskList({
 }: TaskListProps) {
   const { canCreateTasks } = useUserRole();
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [statusFilter, setStatusFilter] = useState<string>('active');
   const [userFilter, setUserFilter] = useState<string>('all');
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [detailModalOpen, setDetailModalOpen] = useState(false);
@@ -47,7 +47,14 @@ export function TaskList({
       const matchesSearch =
         task.title.toLowerCase().includes(search.toLowerCase()) ||
         task.description?.toLowerCase().includes(search.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || task.status === statusFilter;
+
+      let matchesStatus = true;
+      if (statusFilter === 'active') {
+        matchesStatus = task.status !== 'done';
+      } else if (statusFilter !== 'all') {
+        matchesStatus = task.status === statusFilter;
+      }
+
       const matchesUser = userFilter === 'all' || task.assigned_to === userFilter;
 
       return matchesSearch && matchesStatus && matchesUser;
@@ -85,7 +92,8 @@ export function TaskList({
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
+              <SelectItem value="active">Ativas</SelectItem>
+              <SelectItem value="all">Todas</SelectItem>
               <SelectItem value="pending">Pendente</SelectItem>
               <SelectItem value="in_progress">Em Progresso</SelectItem>
               <SelectItem value="done">Concluída</SelectItem>
