@@ -8,9 +8,6 @@ import {
   Loader2,
 } from 'lucide-react';
 import {
-  PieChart,
-  Pie,
-  Cell,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -45,18 +42,17 @@ const COLORS = {
 };
 
 export function Dashboard({ stats, userStats }: DashboardProps) {
-  const pieData = [
-    { name: 'Pendentes', value: stats.pending, color: COLORS.pending },
-    { name: 'Em Progresso', value: stats.inProgress, color: COLORS.inProgress },
-    { name: 'Concluídas', value: stats.done, color: COLORS.done },
-  ];
-
   const barData = userStats.map(us => ({
     name: us.user.name.split(' ')[0],
     Concluídas: us.done,
     'Em Progresso': us.inProgress,
     Pendentes: us.pending,
   }));
+
+  const getPercentage = (value: number) => {
+    if (stats.total === 0) return 0;
+    return (value / stats.total) * 100;
+  };
 
   return (
     <div className="space-y-6">
@@ -96,27 +92,64 @@ export function Dashboard({ stats, userStats }: DashboardProps) {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={280}>
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={100}
-                  paddingAngle={4}
-                  dataKey="value"
-                  label={({ name, value }) => `${name}: ${value}`}
-                  labelLine={false}
-                >
-                  {pieData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-                <Legend />
-              </PieChart>
-            </ResponsiveContainer>
+            <div className="space-y-6 pt-4">
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.pending }} />
+                    Pendentes
+                  </span>
+                  <span className="font-medium">{stats.pending} ({getPercentage(stats.pending).toFixed(0)}%)</span>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-500"
+                    style={{
+                      width: `${getPercentage(stats.pending)}%`,
+                      backgroundColor: COLORS.pending
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.inProgress }} />
+                    Em Progresso
+                  </span>
+                  <span className="font-medium">{stats.inProgress} ({getPercentage(stats.inProgress).toFixed(0)}%)</span>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-500"
+                    style={{
+                      width: `${getPercentage(stats.inProgress)}%`,
+                      backgroundColor: COLORS.inProgress
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex justify-between text-sm">
+                  <span className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: COLORS.done }} />
+                    Concluídas
+                  </span>
+                  <span className="font-medium">{stats.done} ({getPercentage(stats.done).toFixed(0)}%)</span>
+                </div>
+                <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
+                  <div
+                    className="h-full transition-all duration-500"
+                    style={{
+                      width: `${getPercentage(stats.done)}%`,
+                      backgroundColor: COLORS.done
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
@@ -129,16 +162,16 @@ export function Dashboard({ stats, userStats }: DashboardProps) {
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={280}>
-              <BarChart data={barData} layout="vertical">
-                <XAxis type="number" />
-                <YAxis dataKey="name" type="category" width={80} />
+              <BarChart data={barData}>
+                <XAxis dataKey="name" />
+                <YAxis />
                 <Tooltip />
                 <Legend />
                 <Bar
                   dataKey="Concluídas"
                   stackId="a"
                   fill={COLORS.done}
-                  radius={[0, 0, 0, 0]}
+                  radius={[0, 0, 4, 4]}
                 />
                 <Bar
                   dataKey="Em Progresso"
@@ -149,7 +182,7 @@ export function Dashboard({ stats, userStats }: DashboardProps) {
                   dataKey="Pendentes"
                   stackId="a"
                   fill={COLORS.pending}
-                  radius={[0, 4, 4, 0]}
+                  radius={[4, 4, 0, 0]}
                 />
               </BarChart>
             </ResponsiveContainer>

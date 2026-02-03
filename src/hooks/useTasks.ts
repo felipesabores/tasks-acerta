@@ -8,6 +8,7 @@ export interface Profile {
   user_id: string;
   name: string;
   avatar_url: string | null;
+  whatsapp?: string | null;
 }
 
 export interface ChecklistItem {
@@ -158,8 +159,53 @@ export function useTasks() {
       }
     }
 
+    // Trigger webhook notification if task is assigned
+    if (data.assignedToId && taskData) {
+      const assignee = profiles.find(p => p.id === data.assignedToId);
+      console.log('DEBUG: Task assigned. Assignee:', assignee);
+
+      if (assignee?.whatsapp) {
+        try {
+          const webhookUrl = import.meta.env.VITE_WHATSAPP_WEBHOOK_URL;
+          console.log('DEBUG: Webhook URL:', webhookUrl);
+
+          if (webhookUrl) {
+            console.log('DEBUG: Sending webhook...');
+            await fetch(webhookUrl, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                task: {
+                  id: taskData.id,
+                  title: taskData.title,
+                  description: taskData.description,
+                  criticality: taskData.criticality,
+                  points: taskData.points,
+                  task_date: taskData.task_date
+                },
+                assignee: {
+                  name: assignee.name,
+                  whatsapp: assignee.whatsapp
+                }
+              }),
+            });
+            console.log('DEBUG: Webhook sent successfully');
+          } else {
+            console.warn('DEBUG: VITE_WHATSAPP_WEBHOOK_URL is missing');
+          }
+        } catch (error) {
+          console.error('DEBUG: Error sending WhatsApp notification:', error);
+          // Don't show toast error for notification failure to avoid confusing user since task was created
+        }
+      } else {
+        console.log('DEBUG: Assignee has no whatsapp number');
+      }
+    }
+
     fetchTasks();
-  }, [user, fetchTasks, toast]);
+  }, [user, fetchTasks, toast, profiles]);
 
   const updateTask = useCallback(async (id: string, data: Partial<TaskFormData>) => {
     const updateData: Record<string, unknown> = {};
