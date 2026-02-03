@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TaskStatusBadge } from './TaskStatusBadge';
 import { CriticalityBadge } from './CriticalityBadge';
 import {
@@ -28,7 +28,7 @@ interface TaskCardProps {
 export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: TaskCardProps) {
   const { canEditTasks, canDeleteTasks } = useUserRole();
   const isCompleted = task.status === 'done';
-  
+
   const assigneeName = task.assignee?.name || 'Não atribuído';
   const initials = assigneeName
     .split(' ')
@@ -46,11 +46,11 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: Ta
   };
 
   return (
-    <Card 
+    <Card
       className={cn(
         "group transition-all duration-200 cursor-pointer",
-        isCompleted 
-          ? "opacity-60 bg-muted/50" 
+        isCompleted
+          ? "opacity-60 bg-muted/50"
           : "hover:shadow-md hover:border-primary/20"
       )}
       onClick={handleCardClick}
@@ -127,6 +127,7 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: Ta
         <div className="flex items-center justify-between gap-2 flex-wrap">
           <div className="flex items-center gap-2">
             <Avatar className="h-7 w-7">
+              <AvatarImage src={task.assignee?.avatar_url || ''} />
               <AvatarFallback className="text-xs bg-primary/10 text-primary">
                 {initials}
               </AvatarFallback>
