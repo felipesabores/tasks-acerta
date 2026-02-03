@@ -35,6 +35,7 @@ interface AdvancedKPIs {
 interface UserPerformance {
   profileId: string;
   name: string;
+  avatarUrl: string | null;
   totalPoints: number;
   tasksCompleted: number;
   tasksNotCompleted: number;
@@ -80,7 +81,7 @@ export function useGodModeStats(dateRange: DateRange) {
 
   useEffect(() => {
     let isMounted = true;
-    
+
     async function fetchData() {
       setLoading(true);
       setError(null);
@@ -107,7 +108,7 @@ export function useGodModeStats(dateRange: DateRange) {
             .lte('completion_date', toDateStr),
           supabase
             .from('user_points')
-            .select('*, profiles!inner(id, name)'),
+            .select('*, profiles!inner(id, name, avatar_url)'),
           supabase
             .from('profiles')
             .select('id, name, created_at'),
@@ -140,7 +141,7 @@ export function useGodModeStats(dateRange: DateRange) {
           pending: tasks.filter(t => t.status === 'pending').length,
           inProgress: tasks.filter(t => t.status === 'in_progress').length,
           done: tasks.filter(t => t.status === 'done').length,
-          completionRate: tasks.length > 0 
+          completionRate: tasks.length > 0
             ? Math.round((tasks.filter(t => t.status === 'done').length / tasks.length) * 100)
             : 0,
           avgCompletionTime: 0, // Would need more data to calculate
@@ -150,6 +151,7 @@ export function useGodModeStats(dateRange: DateRange) {
         const userPerformances: UserPerformance[] = userPoints.map((up: any) => ({
           profileId: up.profile_id,
           name: up.profiles?.name || 'Unknown',
+          avatarUrl: up.profiles?.avatar_url || null,
           totalPoints: up.total_points,
           tasksCompleted: up.tasks_completed,
           tasksNotCompleted: up.tasks_not_completed,
@@ -165,11 +167,11 @@ export function useGodModeStats(dateRange: DateRange) {
         completions.forEach((c: any) => {
           const date = c.completion_date;
           const existing = dailyMap.get(date) || { date, completed: 0, notCompleted: 0, noDemand: 0, total: 0 };
-          
+
           if (c.status === 'completed') existing.completed++;
           else if (c.status === 'not_completed') existing.notCompleted++;
           else if (c.status === 'no_demand') existing.noDemand++;
-          
+
           existing.total++;
           dailyMap.set(date, existing);
         });
@@ -193,13 +195,13 @@ export function useGodModeStats(dateRange: DateRange) {
         // Calculate advanced KPIs
         const totalPoints = userPoints.reduce((sum: number, up: any) => sum + (up.total_points || 0), 0);
         const avgPointsPerUser = profiles.length > 0 ? Math.round(totalPoints / profiles.length) : 0;
-        
+
         const topPerformer = sortedUserPerformances[0];
         const worstPerformer = [...userPerformances].sort((a, b) => a.completionRate - b.completionRate)[0];
-        
+
         const criticalTasks = tasks.filter((t: any) => t.criticality === 'critical' || t.criticality === 'high');
         const pendingCritical = criticalTasks.filter((t: any) => t.status !== 'done').length;
-        
+
         const advancedKPIs: AdvancedKPIs = {
           totalPoints,
           avgPointsPerUser,
@@ -240,7 +242,7 @@ export function useGodModeStats(dateRange: DateRange) {
     }
 
     fetchData();
-    
+
     return () => {
       isMounted = false;
     };
@@ -251,7 +253,7 @@ export function useGodModeStats(dateRange: DateRange) {
 
 export function getDateRangeFromPreset(preset: PeriodPreset): DateRange {
   const today = new Date();
-  
+
   switch (preset) {
     case 'today':
       return { from: startOfDay(today), to: endOfDay(today) };

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
 import { useAuth } from '@/contexts/AuthContext';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Clock, Calendar, Sparkles } from 'lucide-react';
 
 export function UserGreeting() {
@@ -42,23 +43,32 @@ export function UserGreeting() {
       </div>
 
       <div className="relative flex items-start justify-between">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
-              <Sparkles className="h-4 w-4 text-primary" />
+        <div className="flex items-center gap-6">
+          {/* Avatar Size: Fixed 150px on desktop. Padding increased to p-3 for visible gap. */}
+          <Avatar className="h-24 w-24 md:h-[150px] md:w-[150px] border-4 border-primary/20 shadow-md hidden sm:flex p-3 bg-background/50 backdrop-blur-sm">
+            <AvatarImage src={user?.user_metadata?.avatar_url} className="object-cover rounded-full" />
+            <AvatarFallback className="text-4xl bg-primary/10 text-primary">
+              {firstName[0]?.toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <div className="h-8 w-8 rounded-lg bg-primary/20 flex items-center justify-center">
+                <Sparkles className="h-4 w-4 text-primary" />
+              </div>
+              <h1 className="text-2xl font-bold text-foreground">
+                {getGreeting()}, {firstName}! 👋
+              </h1>
             </div>
-            <h1 className="text-2xl font-bold text-foreground">
-              {getGreeting()}, {firstName}! 👋
-            </h1>
-          </div>
-          <div className="flex flex-wrap items-center gap-4 text-muted-foreground mt-3">
-            <div className="flex items-center gap-2 bg-background/50 rounded-lg px-3 py-1.5">
-              <Calendar className="h-4 w-4 text-primary/70" />
-              <span className="capitalize text-sm">{formattedDate}</span>
-            </div>
-            <div className="flex items-center gap-2 bg-background/50 rounded-lg px-3 py-1.5">
-              <Clock className="h-4 w-4 text-primary/70" />
-              <span className="font-mono text-sm">{formattedTime}</span>
+            <div className="flex flex-wrap items-center gap-4 text-muted-foreground mt-3">
+              <div className="flex items-center gap-2 bg-background/50 rounded-lg px-3 py-1.5">
+                <Calendar className="h-4 w-4 text-primary/70" />
+                <span className="capitalize text-sm">{formattedDate}</span>
+              </div>
+              <div className="flex items-center gap-2 bg-background/50 rounded-lg px-3 py-1.5">
+                <Clock className="h-4 w-4 text-primary/70" />
+                <span className="font-mono text-sm">{formattedTime}</span>
+              </div>
             </div>
           </div>
         </div>

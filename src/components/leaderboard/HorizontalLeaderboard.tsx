@@ -1,6 +1,6 @@
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Loader2, AlertCircle } from 'lucide-react';
@@ -110,8 +110,9 @@ export function HorizontalLeaderboard() {
                         <div className="flex items-center gap-1">
                           {getRankDisplay(entry.rank, entry.isPending)}
                         </div>
-                        
+
                         <Avatar className="h-10 w-10">
+                          <AvatarImage src={entry.profile.avatar_url || ''} />
                           <AvatarFallback className={cn(
                             "font-medium text-sm",
                             entry.rank === 1 && "bg-yellow-100 text-yellow-800",
@@ -121,7 +122,7 @@ export function HorizontalLeaderboard() {
                             {initials}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="text-center">
                           <p className={cn(
                             "font-medium text-sm truncate max-w-[80px]",
@@ -133,7 +134,7 @@ export function HorizontalLeaderboard() {
                             <span className="text-[10px] text-primary font-medium">(você)</span>
                           )}
                         </div>
-                        
+
                         <div className="text-center">
                           <p className={cn(
                             "font-bold text-lg",
@@ -181,13 +182,14 @@ export function HorizontalLeaderboard() {
                           )}
                         >
                           {getRankDisplay(entry.rank, entry.isPending)}
-                          
+
                           <Avatar className="h-8 w-8">
+                            <AvatarImage src={entry.profile.avatar_url || ''} />
                             <AvatarFallback className="font-medium text-xs bg-muted">
                               {initials}
                             </AvatarFallback>
                           </Avatar>
-                          
+
                           <div className="text-center">
                             <p className={cn(
                               "text-xs truncate max-w-[70px]",

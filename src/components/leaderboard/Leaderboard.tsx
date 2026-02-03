@@ -1,6 +1,6 @@
 import { useLeaderboard } from '@/hooks/useLeaderboard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Trophy, Medal, Loader2, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -106,8 +106,9 @@ export function Leaderboard() {
                       )}
                     >
                       {getRankDisplay(entry.rank, entry.isPending)}
-                      
+
                       <Avatar className="h-9 w-9">
+                        <AvatarImage src={entry.profile.avatar_url || ''} />
                         <AvatarFallback className={cn(
                           "font-medium text-sm",
                           entry.rank === 1 && "bg-yellow-100 text-yellow-800",
@@ -117,7 +118,7 @@ export function Leaderboard() {
                           {initials}
                         </AvatarFallback>
                       </Avatar>
-                      
+
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1">
                           <p className={cn(
@@ -134,7 +135,7 @@ export function Leaderboard() {
                           {entry.tasks_completed} ✓ • {entry.tasks_not_completed} ✗
                         </p>
                       </div>
-                      
+
                       <div className="text-right">
                         <p className={cn(
                           "font-bold",
@@ -179,13 +180,14 @@ export function Leaderboard() {
                         )}
                       >
                         {getRankDisplay(entry.rank, entry.isPending)}
-                        
+
                         <Avatar className="h-9 w-9">
+                          <AvatarImage src={entry.profile.avatar_url || ''} />
                           <AvatarFallback className="font-medium text-sm bg-muted">
                             {initials}
                           </AvatarFallback>
                         </Avatar>
-                        
+
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1 flex-wrap">
                             <p className={cn(
@@ -202,7 +204,7 @@ export function Leaderboard() {
                             Pendente
                           </Badge>
                         </div>
-                        
+
                         <div className="text-right">
                           <p className="font-bold text-muted-foreground">
                             {entry.total_points}

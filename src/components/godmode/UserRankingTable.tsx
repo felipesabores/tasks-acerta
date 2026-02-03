@@ -9,13 +9,14 @@ import {
 } from '@/components/ui/table';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Crown, Medal, Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface UserPerformance {
   profileId: string;
   name: string;
+  avatarUrl: string | null;
   totalPoints: number;
   tasksCompleted: number;
   tasksNotCompleted: number;
@@ -123,6 +124,7 @@ export function UserRankingTable({ users }: UserRankingTableProps) {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar className="h-9 w-9 border-2 border-background shadow-sm">
+                        <AvatarImage src={user.avatarUrl || ''} />
                         <AvatarFallback
                           className={cn(
                             'text-xs font-semibold',

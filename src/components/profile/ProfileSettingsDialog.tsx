@@ -143,6 +143,13 @@ export function ProfileSettingsDialog({ children }: { children: React.ReactNode 
 
             setProfile({ ...profile, avatar_url: data.publicUrl });
 
+            // Sync with Supabase Auth Metadata (to update UI immediately)
+            const { error: authError } = await supabase.auth.updateUser({
+                data: { avatar_url: data.publicUrl }
+            });
+
+            if (authError) console.error('Error syncing auth metadata:', authError);
+
             toast({
                 title: 'Avatar atualizado',
                 description: 'Sua nova foto de perfil foi salva.',
