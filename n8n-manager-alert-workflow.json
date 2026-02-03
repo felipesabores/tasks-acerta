@@ -1,0 +1,276 @@
+{
+  "name": "Acerta+ Manager Alert - Daily Tasks Completed",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "daily-task-completed",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "webhook_trigger",
+      "name": "Webhook (Supabase)"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select count(*) as total_tasks from tasks where assigned_to = $1 and task_date = $2 and is_template = false",
+        "additionalFields": {
+          "queryParams": "={{ $json.body.record.user_id }},{{ $json.body.record.completion_date }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        200,
+        0
+      ],
+      "id": "get_total_tasks",
+      "name": "Get Total Tasks",
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "select count(*) as completed_tasks from daily_task_completions where user_id = $1 and completion_date = $2 and status = 'completed'",
+        "additionalFields": {
+          "queryParams": "={{ $('webhook_trigger').item.json.body.record.user_id }},{{ $('webhook_trigger').item.json.body.record.completion_date }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        400,
+        0
+      ],
+      "id": "get_completed_tasks",
+      "name": "Get Completed Tasks",
+      "credentials": {
+        "postgres": {
+          "id": "YOUR_POSTGRES_CREDENTIAL_ID",
+          "name": "Supabase Postgres"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "number": [
+            {
+              "value1": "={{ $json.completed_tasks }}",
+              "operation": "equal",
+              "value2": "={{ $('get_total_tasks').item.json.total_tasks }}"
+            }
+          ]
+        }
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 1,
+      "position": [
+        600,
+        0
+      ],
+      "id": "check_all_completed",
+      "name": "Is Day Finished?"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT DISTINCT t.created_by, p.name as manager_name, p.whatsapp as manager_whatsapp\nFROM tasks t\nJOIN profiles p ON t.created_by = p.user_id\nWHERE t.assigned_to = $1 \nAND t.task_date = $2\nAND t.is_template = false",
+        "additionalFields": {
+          "queryParams": "={{ $('webhook_trigger').item.json.body.record.user_id }},{{ $('webhook_trigger').item.json.body.record.completion_date }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        800,
+        -100
+      ],
+      "id": "get_managers",
+      "name": "Get Task Creators"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT name as user_name FROM profiles WHERE user_id = $1",
+        "additionalFields": {
+          "queryParams": "={{ $('webhook_trigger').item.json.body.record.user_id }}"
+        }
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 1,
+      "position": [
+        800,
+        100
+      ],
+      "id": "get_user_name",
+      "name": "Get User Name"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.merge",
+      "typeVersion": 1,
+      "position": [
+        1000,
+        0
+      ],
+      "id": "merge_data",
+      "name": "Merge Data"
+    },
+    {
+      "parameters": {
+        "functionCode": "// Group tasks by manager if needed, or just iterate\n// Currently 'get_managers' returns one row per manager who created tasks for this user on this day\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 1,
+      "position": [
+        1200,
+        0
+      ],
+      "id": "prepare_messages",
+      "name": "Prepare Messages"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "YOUR_EVOLUTION_API_URL/message/sendText/YOUR_INSTANCE_NAME",
+        "authentication": "headerAuth",
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "apikey",
+              "value": "YOUR_EVOLUTION_API_KEY"
+            }
+          ]
+        },
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "number",
+              "value": "={{ $json.manager_whatsapp }}"
+            },
+            {
+              "name": "text",
+              "value": "={{ '✅ *Acerta+ Notificação*\n\nO colaborador *' + $('get_user_name').item.json.user_name + '* finalizou todas as tarefas do dia! \n\nData: ' + $('webhook_trigger').item.json.body.record.completion_date}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [
+        1400,
+        0
+      ],
+      "id": "send_whatsapp",
+      "name": "Send WhatsApp"
+    }
+  ],
+  "connections": {
+    "webhook_trigger": {
+      "main": [
+        [
+          {
+            "node": "get_total_tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_total_tasks": {
+      "main": [
+        [
+          {
+            "node": "get_completed_tasks",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_completed_tasks": {
+      "main": [
+        [
+          {
+            "node": "check_all_completed",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "check_all_completed": {
+      "main": [
+        [
+          {
+            "node": "get_managers",
+            "type": "main",
+            "index": 0
+          },
+          {
+            "node": "get_user_name",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_managers": {
+      "main": [
+        [
+          {
+            "node": "merge_data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "get_user_name": {
+      "main": [
+        [
+          {
+            "node": "merge_data",
+            "type": "main",
+            "index": 1
+          }
+        ]
+      ]
+    },
+    "merge_data": {
+      "main": [
+        [
+          {
+            "node": "prepare_messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "prepare_messages": {
+      "main": [
+        [
+          {
+            "node": "send_whatsapp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

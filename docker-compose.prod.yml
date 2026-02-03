@@ -1,0 +1,12 @@
+version: '3.8'
+
+services:
+  web:
+    # This uses the image built by GitHub Actions
+    image: ghcr.io/felipesabores/tasks-acerta:latest
+    container_name: tasks-acerta-web
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      - NODE_ENV=production
