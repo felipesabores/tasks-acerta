@@ -1,5 +1,5 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Leaderboard } from '@/components/leaderboard/Leaderboard';
+import { LeaderboardTable } from '@/components/leaderboard/LeaderboardTable';
 import { CriticalityPointsTable } from '@/components/users/CriticalityPointsTable';
 import { PageHeader } from '@/components/ui/page-header';
 import { useUserRole } from '@/hooks/useUserRole';
@@ -19,8 +19,8 @@ export default function LeaderboardPage() {
           variant="warning"
         />
 
-        <Leaderboard />
-        
+        <LeaderboardTable />
+
         {isAdmin && (
           <Card className="border-muted/50 bg-gradient-to-br from-muted/30 via-muted/10 to-transparent">
             <CardHeader>
