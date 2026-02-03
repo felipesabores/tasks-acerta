@@ -1,73 +1,108 @@
-# Welcome to your Lovable project
+# Acerta Express - Dashboard de Gestão e Gamificação
 
-## Project info
+![Acerta Express Banner](public/og-image.png)
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+Sistema completo de gestão de tarefas, acompanhamento de empresas e gamificação corporativa, desenvolvido para otimizar a produtividade e o engajamento das equipes da Acerta Express.
 
-## How can I edit this code?
+## 🚀 Funcionalidades Principais
 
-There are several ways of editing your application.
+### 🎮 Gamificação e Tarefas
+- **Sistema de Pontos e Níveis**: Usuários ganham XP ao concluir tarefas, subindo de nível e desbloqueando conquistas.
+- **Ranking (Leaderboard)**: Visualização competitiva dos colaboradores com maior desempenho.
+- **Tarefas Dinâmicas**: Criação de tarefas com checklists, prazos, criticidade e atribuição a usuários ou setores.
+- **Templates de Tarefas**: Modelos reutilizáveis para processos recorrentes.
 
-**Use Lovable**
+### 🛡️ Controle de Acesso (RBAC)
+O sistema possui um robusto controle de permissões baseado em papéis:
+- **God Mode**: Acesso irrestrito a todo o sistema (CRUD total, gestão de usuários, verificação de todas as tarefas).
+- **Admin**: Gestão completa de usuários e configurações.
+- **Gestor Geral**: Visão ampla de todas as tarefas e métricas.
+- **Gestor de Setor**: Controle total sobre as tarefas e membros do seu setor.
+- **User**: Foco na execução de tarefas atribuídas.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 📊 Gestão Corporativa
+- **Cadastro de Empresas e Setores**: Organização hierárquica dos colaboradores.
+- **Monitoramento em Tempo Real**: Filtros avançados para acompanhar tarefas pendentes, em progresso e concluídas.
+- **Relatórios de Permissões**: Matriz visual de acessos disponível para super usuários.
 
-Changes made via Lovable will be committed automatically to this repo.
+## 🛠️ Stack Tecnológica
 
-**Use your preferred IDE**
+O projeto utiliza as tecnologias mais modernas do ecossistema React:
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Frontend**: [React](https://react.dev/) + [Vite](https://vitejs.dev/) - Performance e DX superior.
+- **Linguagem**: [TypeScript](https://www.typescriptlang.org/) - Tipagem estática para maior segurança.
+- **Estilização**: [Tailwind CSS](https://tailwindcss.com/) + [Shadcn UI](https://ui.shadcn.com/) - Design System premium e responsivo.
+- **Backend & Auth**: [Supabase](https://supabase.com/) - Banco de dados Postgres, Autenticação e Real-time.
+- **State Management**: [TanStack Query](https://tanstack.com/query/latest) - Gerenciamento eficiente de estado assíncrono.
+- **Automação**: [n8n](https://n8n.io/) - Workflows de integração e alertas (Webhooks).
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+## 🐳 Instalação e Execução
 
-Follow these steps:
+### Pré-requisitos
+- Node.js 18+
+- Docker & Docker Compose (Opcional, para deploy)
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+### Desenvolvimento Local
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+1. **Clone o repositório**
+   ```bash
+   git clone https://github.com/seu-usuario/tasks-acerta.git
+   cd tasks-acerta
+   ```
 
-# Step 3: Install the necessary dependencies.
-npm i
+2. **Instale as dependências**
+   ```bash
+   npm install
+   ```
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+3. **Configure as variáveis de ambiente**
+   Crie um arquivo `.env` na raiz do projeto:
+   ```env
+   VITE_SUPABASE_URL=sua_url_supabase
+   VITE_SUPABASE_ANON_KEY=sua_key_supabase
+   VITE_WHATSAPP_WEBHOOK_URL=sua_url_webhook
+   ```
+
+4. **Inicie o servidor de desenvolvimento**
+   ```bash
+   npm run dev
+   ```
+
+### Deploy com Docker
+
+Para subir a aplicação em produção usando Docker:
+
+```bash
+docker-compose up -d --build
 ```
 
-**Edit a file directly in GitHub**
+A aplicação estará disponível na porta definida (padrão `80` ou `8080`).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## 📁 Estrutura do Projeto
 
-**Use GitHub Codespaces**
+```
+src/
+├── components/     # Componentes Reutilizáveis (UI, Tasks, Users)
+├── contexts/       # Contextos React (Auth, Theme)
+├── hooks/          # Hooks Customizados (useUserRole, useTasks)
+├── pages/          # Rotas da Aplicação
+├── integrations/   # Clientes de serviços externos (Supabase)
+└── lib/            # Utilitários e configurações
+```
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+## 🔒 Permissões e Segurança
 
-## What technologies are used for this project?
+A segurança é garantida via **Row Level Security (RLS)** no Postgres.
+Todas as ações sensíveis (como alterar papéis ou concluir tarefas de terceiros) são validadas tanto no Frontend quanto no Backend via Policies e RPC Functions seguras.
 
-This project is built with:
+## 🤝 Contribuindo
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+1. Faça um Fork do projeto
+2. Crie uma Branch para sua Feature (`git checkout -b feature/NovaFeature`)
+3. Faça o Commit de suas mudanças (`git commit -m 'Add some NovaFeature'`)
+4. Faça o Push para a Branch (`git push origin feature/NovaFeature`)
+5. Abra um Pull Request
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Desenvolvido para **Acerta Express**.
