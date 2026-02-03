@@ -4,9 +4,10 @@ import { Logo } from '@/components/ui/logo';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUserRole } from '@/hooks/useUserRole';
 import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { ProfileSettingsDialog } from '@/components/profile/ProfileSettingsDialog';
 import {
   Sidebar,
   SidebarContent,
@@ -24,13 +25,13 @@ import {
 export function AppSidebar() {
   const { state } = useSidebar();
   const { user, signOut } = useAuth();
-  const { 
-    role, 
-    isAdmin, 
-    isGodMode, 
+  const {
+    role,
+    isAdmin,
+    isGodMode,
     isGestorSetor,
     isGestorGeral,
-    canCreateTasks, 
+    canCreateTasks,
     canManageUsers,
     canViewAllTasks,
   } = useUserRole();
@@ -70,9 +71,9 @@ export function AppSidebar() {
       <SidebarHeader className="border-b border-sidebar-border p-4">
         <div className="flex items-center justify-center w-full">
           {isCollapsed ? (
-            <img 
-              src="/favicon.ico" 
-              alt="AcertaMais" 
+            <img
+              src="/favicon.ico"
+              alt="AcertaMais"
               className="h-8 w-8"
             />
           ) : (
@@ -231,24 +232,30 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
         <div className="flex items-center gap-3">
-          <Avatar className="h-8 w-8">
-            <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
-          {!isCollapsed && (
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <p className="text-sm font-medium text-sidebar-foreground truncate">
-                  {userName}
-                </p>
-                <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                  {getRoleLabel()}
-                </Badge>
-              </div>
-              <p className="text-xs text-sidebar-foreground/60 truncate">{userEmail}</p>
+          <ProfileSettingsDialog>
+            <div className="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80 transition-opacity">
+              <Avatar className="h-8 w-8">
+                <AvatarImage src={user?.user_metadata?.avatar_url} />
+                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+              {!isCollapsed && (
+                <div className="flex-1 min-w-0 text-left">
+                  <div className="flex items-center gap-2">
+                    <p className="text-sm font-medium text-sidebar-foreground truncate">
+                      {userName}
+                    </p>
+                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                      {getRoleLabel()}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-sidebar-foreground/60 truncate">{userEmail}</p>
+                </div>
+              )}
             </div>
-          )}
+          </ProfileSettingsDialog>
+
           <Button
             variant="ghost"
             size="icon"
