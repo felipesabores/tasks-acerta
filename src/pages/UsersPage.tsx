@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { AppLayout } from '@/components/layout/AppLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { PageHeader } from '@/components/ui/page-header';
@@ -34,6 +34,7 @@ interface UserWithRole {
   id: string;
   user_id: string;
   name: string;
+  avatar_url?: string | null;
   username?: string;
   whatsapp?: string;
   cargo?: string;
@@ -73,7 +74,7 @@ export default function UsersPage() {
 
     // Fetch roles and sectors for each user
     const usersWithRoles: UserWithRole[] = [];
-    
+
     for (const profile of profiles || []) {
       const [roleResult, sectorResult] = await Promise.all([
         supabase
@@ -92,6 +93,7 @@ export default function UsersPage() {
         id: profile.id,
         user_id: profile.user_id,
         name: profile.name,
+        avatar_url: profile.avatar_url || undefined,
         username: profile.username || undefined,
         whatsapp: profile.whatsapp || undefined,
         cargo: profile.cargo || undefined,
@@ -291,6 +293,7 @@ export default function UsersPage() {
                               <TableCell>
                                 <div className="flex items-center gap-3">
                                   <Avatar className="h-8 w-8">
+                                    <AvatarImage src={user.avatar_url || ''} />
                                     <AvatarFallback className="text-xs bg-primary/10 text-primary">
                                       {initials}
                                     </AvatarFallback>
@@ -349,7 +352,7 @@ export default function UsersPage() {
                               <TableCell>
                                 <Select
                                   value={user.role}
-                                  onValueChange={(value: AppRole) => 
+                                  onValueChange={(value: AppRole) =>
                                     handleRoleChange(user.id, user.user_id, value)
                                   }
                                   disabled={updatingUserId === user.id}
@@ -406,7 +409,7 @@ export default function UsersPage() {
                   <div>
                     <p className="font-medium">Administrador</p>
                     <p className="text-sm text-muted-foreground">
-                      Controle total sobre o sistema. Pode criar, editar e excluir tarefas, 
+                      Controle total sobre o sistema. Pode criar, editar e excluir tarefas,
                       gerenciar usuários e alterar papéis.
                     </p>
                   </div>
