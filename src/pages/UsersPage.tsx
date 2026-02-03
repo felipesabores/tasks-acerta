@@ -122,28 +122,13 @@ export default function UsersPage() {
   const handleRoleChange = async (userId: string, authUserId: string, newRole: AppRole) => {
     setUpdatingUserId(userId);
 
-    const { data: existingRole } = await supabase
-      .from('user_roles')
-      .select('id')
-      .eq('user_id', authUserId)
-      .maybeSingle();
-
-    let error;
-
-    if (existingRole) {
-      const { error: updateError } = await supabase
-        .from('user_roles')
-        .update({ role: newRole })
-        .eq('user_id', authUserId);
-      error = updateError;
-    } else {
-      const { error: insertError } = await supabase
-        .from('user_roles')
-        .insert({ user_id: authUserId, role: newRole });
-      error = insertError;
-    }
+    const { error } = await supabase.rpc('set_user_role', {
+      target_user_id: authUserId,
+      new_role: newRole,
+    });
 
     if (error) {
+      console.error('Error updating role:', error);
       toast({
         title: 'Erro ao atualizar papel',
         description: error.message,
