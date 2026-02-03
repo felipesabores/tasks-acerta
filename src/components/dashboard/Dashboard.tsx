@@ -156,39 +156,6 @@ export function Dashboard({ stats, userStats }: DashboardProps) {
           </CardContent>
         </Card>
       </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Ranking de Conclusão</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {userStats
-              .sort((a, b) => b.completionRate - a.completionRate)
-              .map((us, index) => (
-                <div key={us.user.id} className="flex items-center gap-4">
-                  <span className="text-lg font-bold text-muted-foreground w-6">
-                    {index + 1}º
-                  </span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="font-medium">{us.user.name}</span>
-                      <span className="text-sm text-muted-foreground">
-                        {us.done}/{us.total} tarefas ({us.completionRate}%)
-                      </span>
-                    </div>
-                    <div className="h-2 bg-secondary rounded-full overflow-hidden">
-                      <div
-                        className="h-full bg-primary transition-all duration-500"
-                        style={{ width: `${us.completionRate}%` }}
-                      />
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 }
