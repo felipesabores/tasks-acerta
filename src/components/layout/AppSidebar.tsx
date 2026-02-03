@@ -9,6 +9,13 @@ import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { ProfileSettingsDialog } from '@/components/profile/ProfileSettingsDialog';
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -231,41 +238,52 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="border-t border-sidebar-border p-4">
-        <div className="flex items-center gap-3">
-          <ProfileSettingsDialog>
-            <div className="flex items-center gap-3 flex-1 cursor-pointer hover:opacity-80 transition-opacity">
-              <Avatar className="h-8 w-8">
-                <AvatarImage src={user?.user_metadata?.avatar_url} />
-                <AvatarFallback className="bg-sidebar-primary text-sidebar-primary-foreground text-xs">
-                  {initials}
-                </AvatarFallback>
-              </Avatar>
-              {!isCollapsed && (
-                <div className="flex-1 min-w-0 text-left">
-                  <div className="flex items-center gap-2">
-                    <p className="text-sm font-medium text-sidebar-foreground truncate">
-                      {userName}
-                    </p>
-                    <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                      {getRoleLabel()}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-sidebar-foreground/60 truncate">{userEmail}</p>
+        <div className="flex items-center justify-center">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="relative group focus:outline-none">
+                <Avatar className="h-14 w-14 cursor-pointer ring-2 ring-sidebar-border group-hover:ring-primary/50 transition-all">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-lg font-semibold">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                {/* Online status indicator */}
+                <span className="absolute bottom-0 right-0 h-4 w-4 rounded-full bg-emerald-500 border-2 border-sidebar-background" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <div className="flex items-center gap-3 p-2">
+                <Avatar className="h-10 w-10">
+                  <AvatarImage src={user?.user_metadata?.avatar_url} />
+                  <AvatarFallback className="bg-primary/10 text-primary">
+                    {initials}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium truncate">{userName}</p>
+                  <p className="text-xs text-muted-foreground truncate">{userEmail}</p>
                 </div>
-              )}
-            </div>
-          </ProfileSettingsDialog>
-
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={signOut}
-            className="h-8 w-8 text-sidebar-foreground hover:bg-sidebar-accent"
-            title="Sair"
-          >
-            <LogOut className="h-4 w-4" />
-          </Button>
-          <ThemeToggle />
+              </div>
+              <DropdownMenuSeparator />
+              <div className="px-2 py-1.5">
+                <Badge variant="outline" className="text-xs">
+                  {getRoleLabel()}
+                </Badge>
+              </div>
+              <DropdownMenuSeparator />
+              <ProfileSettingsDialog>
+                <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Configurações de Perfil
+                </DropdownMenuItem>
+              </ProfileSettingsDialog>
+              <DropdownMenuItem onClick={signOut}>
+                <LogOut className="h-4 w-4 mr-2" />
+                Sair
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </SidebarFooter>
     </Sidebar>
