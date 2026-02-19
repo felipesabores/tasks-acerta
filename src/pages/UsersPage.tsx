@@ -122,7 +122,7 @@ export default function UsersPage() {
   const handleRoleChange = async (userId: string, authUserId: string, newRole: AppRole) => {
     setUpdatingUserId(userId);
 
-    const { error } = await supabase.rpc('set_user_role', {
+    const { error } = await supabase.rpc('set_user_role' as any, {
       target_user_id: authUserId,
       new_role: newRole,
     });

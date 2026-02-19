@@ -127,76 +127,22 @@ export function UserRegistrationForm({ onSuccess }: UserRegistrationFormProps) {
     setIsSubmitting(true);
 
     try {
-      // Generate internal email from username
-      const internalEmail = `${values.username.toLowerCase()}@internal.acertamais.app`;
-
-      // Create user via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: internalEmail,
-        password: values.password,
-        options: {
-          data: {
-            name: values.name,
-          },
+      const { data, error } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          name: values.name,
+          username: values.username,
+          password: values.password,
+          role: values.role,
+          companyId: values.companyId,
+          sectorId: values.sectorId,
+          positionId: values.positionId,
+          whatsapp: values.whatsapp || null,
+          isActive: values.isActive,
         },
       });
 
-      if (authError) throw authError;
-
-      if (!authData.user) {
-        throw new Error('Erro ao criar usuário');
-      }
-
-      // Update profile with additional fields
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          name: values.name,
-          username: values.username,
-          whatsapp: values.whatsapp || null,
-          company_id: values.companyId,
-          position_id: values.positionId,
-          is_active: values.isActive,
-        })
-        .eq('user_id', authData.user.id);
-
-      if (profileError) {
-        console.error('Error updating profile:', profileError);
-        throw profileError;
-      }
-
-      // Get profile id for sector assignment
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('id')
-        .eq('user_id', authData.user.id)
-        .single();
-
-      if (profile) {
-        // Assign user to sector
-        const { error: sectorError } = await supabase
-          .from('profile_sectors')
-          .insert({
-            profile_id: profile.id,
-            sector_id: values.sectorId,
-          });
-
-        if (sectorError) {
-          console.error('Error assigning sector:', sectorError);
-        }
-      }
-
-      // Update user role if not 'user'
-      if (values.role !== 'user') {
-        const { error: roleError } = await supabase
-          .from('user_roles')
-          .update({ role: values.role })
-          .eq('user_id', authData.user.id);
-
-        if (roleError) {
-          console.error('Error updating role:', roleError);
-        }
-      }
+      if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast({
         title: 'Usuário cadastrado',
