@@ -170,13 +170,21 @@ export default function SectorTasksPage() {
 
   const handleSubmit = async (data: TaskFormData) => {
     try {
+      const taskData = {
+        title: data.title,
+        description: data.description || null,
+        status: data.status || 'pending',
+        assigned_to: data.assignedToId || null,
+        sector_id: selectedSectorId || data.sectorId || null,
+        criticality: data.criticality || 'medium',
+        is_mandatory: data.isMandatory || false,
+        points: data.points || 0,
+      };
+
       if (editingTask) {
         const { error } = await supabase
           .from('tasks')
-          .update({
-            ...data,
-            sector_id: selectedSectorId,
-          })
+          .update(taskData)
           .eq('id', editingTask.id);
 
         if (error) throw error;
@@ -195,8 +203,7 @@ export default function SectorTasksPage() {
         const { error } = await supabase
           .from('tasks')
           .insert({
-            ...data,
-            sector_id: selectedSectorId,
+            ...taskData,
             created_by: profile?.id,
           });
 
