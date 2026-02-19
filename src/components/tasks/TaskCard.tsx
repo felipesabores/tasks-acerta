@@ -142,12 +142,10 @@ export function TaskCard({ task, onEdit, onDelete, onStatusChange, onClick }: Ta
               </div>
             )}
             <CriticalityBadge criticality={task.criticality} />
-            {task.due_date && (
-              <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                <Calendar className="h-3 w-3" />
-                {format(new Date(task.due_date), "dd MMM", { locale: ptBR })}
-              </div>
-            )}
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <Calendar className="h-3 w-3" />
+              {format(new Date(task.created_at), "dd MMM", { locale: ptBR })}
+            </div>
             <TaskStatusBadge status={task.status} />
           </div>
         </div>
