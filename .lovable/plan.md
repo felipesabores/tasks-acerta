@@ -1,121 +1,53 @@
 
+# Corrigir Criação de Usuário sem Perder Sessão do God Mode
 
-# Plano: Gerar PDF do Relatório Executivo
+## Problema
+Quando o god_mode cria um novo usuário pelo formulário de cadastro, a chamada `supabase.auth.signUp()` automaticamente faz login com o novo usuário, deslogando o god_mode da sessão atual.
 
-## Objetivo
-Criar uma página dedicada com o Relatório Executivo do Sistema AcertaMais e um botão para exportar como PDF pronto para impressão.
+## Solução
+Criar uma backend function que usa credenciais administrativas para criar o usuário, sem afetar a sessão do administrador logado. Isso tambem corrige o erro de build do TypeScript com a funcao `set_user_role`.
 
----
+## Alteracoes
 
-## Implementação
+### 1. Criar Backend Function: `admin-create-user`
+Arquivo: `supabase/functions/admin-create-user/index.ts`
 
-### Etapa 1: Instalar Dependências
+- Recebe os dados do novo usuario (name, username, password, role, company, sector, position, whatsapp, isActive)
+- Valida que o usuario chamando eh god_mode ou admin (via token JWT)
+- Usa o Supabase Admin API (service role) para criar o usuario sem afetar a sessao atual
+- Configura profile, role, e setor em uma unica chamada server-side
+- Retorna sucesso/erro
 
-Adicionar as bibliotecas necessárias para geração de PDF:
-- `jspdf` - Biblioteca para criar documentos PDF
-- `html2canvas` - Converte elementos HTML em imagens para o PDF
+### 2. Modificar `UserRegistrationForm.tsx`
+- Substituir a chamada direta a `supabase.auth.signUp()` por uma chamada a funcao backend `admin-create-user`
+- Remover toda a logica de update de profile/role/sector que era feita client-side
+- Manter o mesmo formulario e validacao
 
-### Etapa 2: Criar Página do Relatório
+### 3. Corrigir erro de build em `UsersPage.tsx`
+- A funcao RPC `set_user_role` existe no banco mas nao esta nos types gerados
+- Usar cast `.rpc('set_user_role' as any, ...)` como workaround temporario ate os types serem regenerados
 
-Criar uma nova página `src/pages/ExecutiveReportPage.tsx` com:
+## Detalhes Tecnicos
 
-**Estrutura do Conteúdo:**
-- Cabeçalho com logo e título "Relatório Executivo - AcertaMais"
-- Data de geração
-- Seções organizadas:
-  1. Visão Geral do Sistema
-  2. Arquitetura e Modelo de Dados
-  3. Papéis de Acesso (RBAC)
-  4. Funcionalidades Implementadas
-  5. Casos de Uso Principais
-  6. Dados Atuais (busca do banco)
-  7. Problemas Identificados
-  8. Melhorias Sugeridas
-  9. Resumo Executivo
+### Backend Function `admin-create-user`
 
-**Funcionalidades:**
-- Botão "Exportar PDF" no topo
-- Layout otimizado para impressão (A4)
-- Estilos específicos para visualização e para PDF
-
-### Etapa 3: Implementar Geração de PDF
-
-Usar o padrão `html2canvas` + `jspdf`:
-- Capturar o elemento do relatório como canvas
-- Converter para imagem PNG
-- Calcular dimensões para formato A4
-- Suporte a múltiplas páginas se o conteúdo exceder uma página
-- Salvar como "relatorio-executivo-acertamais.pdf"
-
-### Etapa 4: Adicionar Rota e Menu
-
-- Nova rota `/executive-report` no `App.tsx`
-- Link no menu lateral (visível apenas para god_mode)
-- Ícone: FileText do lucide-react
-
----
-
-## Arquivos a Criar/Modificar
-
-| Arquivo | Ação |
-|---------|------|
-| `src/pages/ExecutiveReportPage.tsx` | Criar - Página completa do relatório |
-| `src/components/report/ReportSection.tsx` | Criar - Componente reutilizável para seções |
-| `src/hooks/useExecutiveReport.ts` | Criar - Hook para buscar dados do banco |
-| `src/App.tsx` | Modificar - Adicionar rota |
-| `src/components/layout/AppSidebar.tsx` | Modificar - Adicionar link no menu |
-
----
-
-## Detalhes Técnicos
-
-### Geração de PDF Multi-Página
-```typescript
-const generatePDF = async () => {
-  const element = reportRef.current;
-  const canvas = await html2canvas(element, { scale: 2 });
-  
-  const pdf = new jsPDF('p', 'mm', 'a4');
-  const pageWidth = pdf.internal.pageSize.getWidth();
-  const pageHeight = pdf.internal.pageSize.getHeight();
-  
-  const imgWidth = pageWidth;
-  const imgHeight = (canvas.height * imgWidth) / canvas.width;
-  
-  let heightLeft = imgHeight;
-  let position = 0;
-  
-  // Primeira página
-  pdf.addImage(canvas, 'PNG', 0, position, imgWidth, imgHeight);
-  heightLeft -= pageHeight;
-  
-  // Páginas adicionais se necessário
-  while (heightLeft > 0) {
-    position = heightLeft - imgHeight;
-    pdf.addPage();
-    pdf.addImage(canvas, 'PNG', 0, position, imgWidth, imgHeight);
-    heightLeft -= pageHeight;
-  }
-  
-  pdf.save('relatorio-executivo-acertamais.pdf');
-};
+```text
+Fluxo:
+1. Recebe POST com dados do usuario
+2. Extrai JWT do header Authorization
+3. Verifica role do chamador (god_mode ou admin)
+4. Cria usuario via supabaseAdmin.auth.admin.createUser()
+   - Isso NAO afeta a sessao do chamador
+5. Atualiza profile (name, username, whatsapp, company_id, position_id, is_active)
+6. Insere em profile_sectors
+7. Atualiza user_roles se role != 'user'
+8. Retorna { success: true, userId }
 ```
 
-### Estilos para Impressão
-O componente terá estilos específicos para garantir boa aparência no PDF:
-- Fundo branco
-- Fontes legíveis (mínimo 12pt)
-- Margens adequadas
-- Tabelas com bordas visíveis
-- Quebras de página apropriadas
+### Arquivos
 
----
-
-## Resultado Esperado
-
-Uma página acessível via menu "Relatório Executivo" (god_mode) que:
-1. Exibe o relatório completo formatado
-2. Permite visualizar antes de exportar
-3. Gera PDF de alta qualidade com um clique
-4. PDF pronto para impressão em formato A4
-
+| Arquivo | Acao |
+|---------|------|
+| `supabase/functions/admin-create-user/index.ts` | Criar |
+| `src/components/users/UserRegistrationForm.tsx` | Modificar - usar edge function |
+| `src/pages/UsersPage.tsx` | Corrigir - fix TypeScript error |
