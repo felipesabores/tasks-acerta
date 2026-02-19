@@ -24,7 +24,17 @@ import {
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useUserRole, AppRole } from '@/hooks/useUserRole';
-import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Building2, CheckCircle, XCircle } from 'lucide-react';
+import { Loader2, Users, Shield, Edit, User, UserPlus, Pencil, Building2, CheckCircle, XCircle, Trash2 } from 'lucide-react';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { Navigate } from 'react-router-dom';
 import { UserRegistrationForm } from '@/components/users/UserRegistrationForm';
 import { UserEditDialog, UserToEdit } from '@/components/users/UserEditDialog';
@@ -56,6 +66,8 @@ export default function UsersPage() {
   const [loading, setLoading] = useState(true);
   const [updatingUserId, setUpdatingUserId] = useState<string | null>(null);
   const [editingUser, setEditingUser] = useState<UserToEdit | null>(null);
+  const [deletingUser, setDeletingUser] = useState<UserWithRole | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const fetchUsers = useCallback(async () => {
     const { data: profiles, error: profilesError } = await supabase
@@ -143,6 +155,32 @@ export default function UsersPage() {
     }
 
     setUpdatingUserId(null);
+  };
+
+  const handleDeleteUser = async () => {
+    if (!deletingUser) return;
+    setIsDeleting(true);
+
+    const { data, error } = await supabase.functions.invoke('admin-delete-user', {
+      body: { userId: deletingUser.user_id },
+    });
+
+    if (error || data?.error) {
+      toast({
+        title: 'Erro ao excluir usuário',
+        description: data?.error || error?.message,
+        variant: 'destructive',
+      });
+    } else {
+      toast({
+        title: 'Usuário excluído',
+        description: `${deletingUser.name} foi removido do sistema.`,
+      });
+      fetchUsers();
+    }
+
+    setIsDeleting(false);
+    setDeletingUser(null);
   };
 
   const openEditDialog = (user: UserWithRole) => {
@@ -273,6 +311,7 @@ export default function UsersPage() {
                           <TableHead>Papel</TableHead>
                           <TableHead>Alterar Papel</TableHead>
                           <TableHead className="w-[80px]">Editar</TableHead>
+                          {isGodMode && <TableHead className="w-[80px]">Excluir</TableHead>}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
@@ -382,6 +421,18 @@ export default function UsersPage() {
                                   <Pencil className="h-4 w-4" />
                                 </Button>
                               </TableCell>
+                              {isGodMode && (
+                                <TableCell>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => setDeletingUser(user)}
+                                    className="h-8 w-8 text-destructive hover:text-destructive"
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </TableCell>
+                              )}
                             </TableRow>
                           );
                         })}
@@ -469,6 +520,29 @@ export default function UsersPage() {
           onSuccess={fetchUsers}
           isGodMode={isGodMode}
         />
+
+        {/* Delete User Confirmation */}
+        <AlertDialog open={!!deletingUser} onOpenChange={(open) => !open && setDeletingUser(null)}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Excluir usuário</AlertDialogTitle>
+              <AlertDialogDescription>
+                Tem certeza que deseja excluir <strong>{deletingUser?.name}</strong>? Esta ação é irreversível e removerá todos os dados do usuário.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+              <AlertDialogAction
+                onClick={handleDeleteUser}
+                disabled={isDeleting}
+                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                {isDeleting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                Excluir
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </AppLayout>
   );
